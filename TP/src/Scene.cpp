@@ -18,6 +18,8 @@ void Scene::add_object(PointLight obj) {
 }
 
 void Scene::render(const Camera& camera) const {
+    Frustum frustum = camera.build_frustum();
+
     // Fill and bind frame data buffer
     TypedBuffer<shader::FrameData> buffer(nullptr, 1);
     {
@@ -47,7 +49,7 @@ void Scene::render(const Camera& camera) const {
 
     // Render every object
     for(const SceneObject& obj : _objects) {
-        obj.render();
+        obj.render(camera, frustum);
     }
 }
 

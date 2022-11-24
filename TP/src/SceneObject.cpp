@@ -2,29 +2,35 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace OM3D {
+namespace OM3D
+{
 
-SceneObject::SceneObject(std::shared_ptr<StaticMesh> mesh, std::shared_ptr<Material> material) :
-    _mesh(std::move(mesh)),
-    _material(std::move(material)) {
-}
-
-void SceneObject::render() const {
-    if(!_material || !_mesh) {
-        return;
+    SceneObject::SceneObject(std::shared_ptr<StaticMesh> mesh, std::shared_ptr<Material> material) : _mesh(std::move(mesh)),
+                                                                                                     _material(std::move(material))
+    {
     }
 
-   _material->set_uniform(HASH("model"), transform());
-   _material->bind();
-    _mesh->draw();
-}
+    void SceneObject::render(Camera camera, Frustum frustum) const
+    {
+        if (!_material || !_mesh)
+        {
+            return;
+        }
 
-void SceneObject::set_transform(const glm::mat4& tr) {
-    _transform = tr;
-}
+        _material->set_uniform(HASH("model"), transform());
+        _material->bind();
+        if (_mesh->isVisible(camera, frustum))
+            _mesh->draw();
+    }
 
-const glm::mat4& SceneObject::transform() const {
-    return _transform;
-}
+    void SceneObject::set_transform(const glm::mat4 &tr)
+    {
+        _transform = tr;
+    }
+
+    const glm::mat4 &SceneObject::transform() const
+    {
+        return _transform;
+    }
 
 }

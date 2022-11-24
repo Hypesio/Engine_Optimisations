@@ -76,6 +76,9 @@ void init_graphics() {
         glDebugMessageCallback(&debug_out, nullptr);
 
         glEnable(GL_DEBUG_OUTPUT);
+                    
+        glCullFace(GL_BACK);
+        glFrontFace(GL_CCW);
 #ifdef OS_WIN
         if(running_in_debugger()) {
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);

@@ -14,6 +14,11 @@ enum class BlendMode {
     Alpha,
 };
 
+enum class CullMode {
+    None, 
+    Backface,
+};
+
 enum class DepthTestMode {
     Standard,
     Reversed,
@@ -50,6 +55,7 @@ class Material {
 
         BlendMode _blend_mode = BlendMode::None;
         DepthTestMode _depth_test_mode = DepthTestMode::Standard;
+        CullMode _culling_mode = CullMode::Backface; 
 
 };
 

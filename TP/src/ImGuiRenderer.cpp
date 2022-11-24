@@ -243,6 +243,7 @@ void ImGuiRenderer::render(const ImDrawData* draw_data) {
 
     glEnable(GL_SCISSOR_TEST);
     DEFER(glDisable(GL_SCISSOR_TEST));
+    glDisable(GL_CULL_FACE);
 
     TypedBuffer<ImDrawIdx> index_buffer(nullptr, draw_data->TotalIdxCount);
     TypedBuffer<ImDrawVert> vertex_buffer(nullptr, draw_data->TotalVtxCount);

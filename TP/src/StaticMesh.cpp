@@ -7,6 +7,38 @@ namespace OM3D {
 StaticMesh::StaticMesh(const MeshData& data) :
     _vertex_buffer(data.vertices),
     _index_buffer(data.indices) {
+    glm::vec3 origin = {0,0,0};
+    for (size_t i = 0; i < data.vertices.size(); ++i) {
+        origin += data.vertices[i].position;
+    }
+    origin /= data.vertices.size();
+
+    float radius = 0;
+    size_t radius_idx = -1;
+    for (size_t i = 0; i < data.vertices.size(); ++i) {
+        
+        float dist = glm::distance(origin, data.vertices[i].position);
+        if (radius < dist) {
+            radius = dist;
+            radius_idx = i;
+        }
+    }
+
+    _bounding_sphere = {origin, radius};
+}
+
+bool StaticMesh::isVisible(Camera camera, Frustum frustum) {
+    // Frustum culling
+    glm::vec3 dir = _bounding_sphere.center_pos - camera.position();
+    float r = _bounding_sphere.radius;
+
+
+    
+    return glm::dot(dir, frustum._bottom_normal) > -r
+        && glm::dot(dir, frustum._top_normal) > -r
+        && glm::dot(dir, frustum._near_normal) > -r
+        && glm::dot(dir, frustum._left_normal) > -r
+        && glm::dot(dir, frustum._right_normal) > -r;
 }
 
 void StaticMesh::draw() const {

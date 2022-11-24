@@ -64,6 +64,15 @@ void Material::bind() const {
         break;
     }
 
+    switch(_culling_mode) {
+        case CullMode::None: 
+            glDisable(GL_CULL_FACE);
+            break; 
+        case CullMode::Backface: 
+            glEnable(GL_CULL_FACE); 
+            break; 
+    }
+
     for(const auto& texture : _textures) {
         texture.second->bind(texture.first);
     }
