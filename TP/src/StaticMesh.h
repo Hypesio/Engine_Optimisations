@@ -34,8 +34,12 @@ namespace OM3D
 
         StaticMesh(const MeshData &data);
         
-        bool isVisible(Camera cmaera, Frustum frustum);
+        bool is_visible(Camera camera, Frustum frustum);
         void draw() const;
+        void bind_enable() const;
+        const TypedBuffer<u32>& get_index_buffer() const {
+            return _index_buffer;
+        }
 
     private:
         TypedBuffer<Vertex> _vertex_buffer;

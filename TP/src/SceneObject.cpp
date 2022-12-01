@@ -19,7 +19,7 @@ namespace OM3D
 
         _material->set_uniform(HASH("model"), transform());
         _material->bind();
-        if (_mesh->isVisible(camera, frustum))
+        if (_mesh->is_visible(camera, frustum))
             _mesh->draw();
     }
 
@@ -31,6 +31,15 @@ namespace OM3D
     const glm::mat4 &SceneObject::transform() const
     {
         return _transform;
+    }
+
+    float SceneObject::get_scale() {
+        // TODO
+    }
+
+    bool SceneObject::same_type(const SceneObject& rhs) {
+        // TODO improve by comparing vertex data
+        return _material == rhs._material;
     }
 
 }

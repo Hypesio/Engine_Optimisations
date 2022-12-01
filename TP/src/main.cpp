@@ -87,7 +87,7 @@ std::unique_ptr<Scene> create_default_scene() {
     auto scene = std::make_unique<Scene>();
 
     // Load default cube model
-    auto result = Scene::from_gltf(std::string(data_path) + "cube.glb");
+    auto result = Scene::from_gltf(std::string(data_path) + "forest.glb");
     ALWAYS_ASSERT(result.is_ok, "Unable to load default scene");
     scene = std::move(result.value);
 
@@ -106,6 +106,9 @@ std::unique_ptr<Scene> create_default_scene() {
         light.set_radius(50.0f);
         scene->add_object(std::move(light));
     }
+
+    // Order objects for instancing
+    scene->order_objects_in_lists();
 
     return scene;
 }
@@ -176,11 +179,12 @@ int main(int, char**) {
         {
             char buffer[1024] = {};
             if(ImGui::InputText("Load scene", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
-                auto result = Scene::from_gltf(buffer);
+                auto result = Scene::from_gltf(std::string(data_path) + buffer);
                 if(!result.is_ok) {
                     std::cerr << "Unable to load scene (" << buffer << ")" << std::endl;
                 } else {
                     scene = std::move(result.value);
+                    scene->order_objects_in_lists();
                     scene_view = SceneView(scene.get());
                 }
             }
