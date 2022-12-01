@@ -145,6 +145,10 @@ int main(int, char**) {
     Framebuffer main_framebuffer(&depth, std::array{&lit});
     Framebuffer tonemap_framebuffer(nullptr, std::array{&color});
 
+    Texture albedo(window_size, ImageFormat::RGBA16_FLOAT);
+    Texture normals(window_size, ImageFormat::RGBA16_FLOAT);
+    Framebuffer g_buffer(&depth, std::array{&albedo, &normals});
+
     for(;;) {
         glfwPollEvents();
         if(glfwWindowShouldClose(window) || glfwGetKey(window, GLFW_KEY_ESCAPE)) {
@@ -159,7 +163,8 @@ int main(int, char**) {
 
         // Render the scene
         {
-            main_framebuffer.bind();
+            //main_framebuffer.bind();
+            g_buffer.bind();
             scene_view.render();
         }
 

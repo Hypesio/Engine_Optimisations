@@ -4,6 +4,7 @@
 #include <SceneObject.h>
 #include <PointLight.h>
 #include <Camera.h>
+#include <Framebuffer.h>
 
 #include <vector>
 #include <memory>
@@ -29,6 +30,7 @@ class Scene : NonMovable {
         std::vector<std::vector<size_t>> _instanceGroups; 
         std::vector<PointLight> _point_lights;
         glm::vec3 _sun_direction = glm::vec3(0.2f, 1.0f, 0.1f);
+        Framebuffer g_buffer;
         
 };
 

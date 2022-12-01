@@ -55,6 +55,8 @@ namespace OM3D
         }
         light_buffer.bind(BufferUsage::Storage, 1);
 
+
+
         // Draw instanced
         for (const std::vector<size_t> &instanceList : _instanceGroups)
         {
