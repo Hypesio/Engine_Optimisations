@@ -19,4 +19,10 @@ void SceneView::render() const {
     }
 }
 
+void SceneView::deferred_render() const {
+    if(_scene) {
+        _scene->deferred_render(_camera);
+    }
+}
+
 }

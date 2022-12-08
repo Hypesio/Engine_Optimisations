@@ -138,6 +138,10 @@ int main(int, char**) {
     SceneView scene_view(scene.get());
 
     auto tonemap_program = Program::from_file("tonemap.comp");
+    auto deferred_program = Program::from_files("deferred.frag", "screen.vert");
+
+    auto deferred_mat = Material::empty_material();
+    deferred_mat->set_program(deferred_program);
 
     Texture depth(window_size, ImageFormat::Depth32_FLOAT);
     Texture lit(window_size, ImageFormat::RGBA16_FLOAT);
@@ -145,10 +149,14 @@ int main(int, char**) {
     Framebuffer main_framebuffer(&depth, std::array{&lit});
     Framebuffer tonemap_framebuffer(nullptr, std::array{&color});
 
-    Texture albedo(window_size, ImageFormat::RGBA16_FLOAT);
-    Texture normals(window_size, ImageFormat::RGBA16_FLOAT);
+    Texture albedo(window_size, ImageFormat::RGBA8_sRGB);
+    Texture normals(window_size, ImageFormat::RGBA8_UNORM);
     Framebuffer g_buffer(&depth, std::array{&albedo, &normals});
 
+    
+    int nb_buffers = 2;
+    Texture *buffers[nb_buffers] = { &albedo, &normals };
+    int buffer_index = 0;
     for(;;) {
         glfwPollEvents();
         if(glfwWindowShouldClose(window) || glfwGetKey(window, GLFW_KEY_ESCAPE)) {
@@ -163,15 +171,31 @@ int main(int, char**) {
 
         // Render the scene
         {
-            //main_framebuffer.bind();
             g_buffer.bind();
             scene_view.render();
+        }
+
+        {
+            deferred_mat->bind();
+            main_framebuffer.bind();
+
+            albedo.bind(0);
+            normals.bind(1);
+            depth.bind(2);
+
+            scene_view.deferred_render();
         }
 
         // Apply a tonemap in compute shader
         {
             tonemap_program->bind();
-            lit.bind(0);
+            
+            // Display debug buffer
+            if (buffer_index > 0)
+                buffers[buffer_index - 1]->bind(0);
+            else 
+                lit.bind(0);
+
             color.bind_as_image(1, AccessType::WriteOnly);
             glDispatchCompute(align_up_to(window_size.x, 8), align_up_to(window_size.y, 8), 1);
         }
@@ -193,6 +217,13 @@ int main(int, char**) {
                     scene_view = SceneView(scene.get());
                 }
             }
+            
+            // Choose debug buffer to display
+            ImGui::InputInt("Display debug", &buffer_index);
+            if (buffer_index >= nb_buffers + 1)  
+                buffer_index = nb_buffers + 1;
+            if (buffer_index < 0)
+                buffer_index = 0;
         }
         imgui.finish();
 

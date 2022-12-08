@@ -35,6 +35,7 @@ void main() {
 #ifdef TEXTURED
     out_albedo *= texture(in_texture, in_uv);
 #endif
+    
     out_normal = vec4(normalize(in_normal), 1.0);
 }
 

@@ -14,6 +14,7 @@ class SceneView {
         const Camera& camera() const;
 
         void render() const;
+        void deferred_render() const;
 
     private:
         const Scene* _scene = nullptr;
