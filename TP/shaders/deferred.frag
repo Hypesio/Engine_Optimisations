@@ -39,10 +39,15 @@ void main() {
 
     vec3 position = unproject(in_uv, depth, frame.camera.inv_view_proj);
 
-    /*for(uint i = 0; i != frame.point_light_count; ++i) {
+    for(uint i = 0; i != frame.point_light_count; ++i) {
         PointLight light = point_lights[i];
+        
         const vec3 to_light = (light.position - position);
         const float dist = length(to_light);
+
+        if (dist > light.radius)
+            continue;
+
         const vec3 light_vec = to_light / dist;
 
         const float NoL = dot(light_vec, normal);
@@ -52,7 +57,7 @@ void main() {
         }
 
         acc += light.color * (NoL * att);
-    }*/
+    }
 
     out_color = vec4(albedo * acc, 1.0);
 }

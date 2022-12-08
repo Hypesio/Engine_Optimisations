@@ -52,7 +52,7 @@ namespace OM3D
                     0.0f};
             }
         }
-
+        light_buffer.bind(BufferUsage::Storage, 1);
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
@@ -87,7 +87,6 @@ namespace OM3D
             }
         }
         light_buffer.bind(BufferUsage::Storage, 1);
-
 
 
         // Draw instanced
