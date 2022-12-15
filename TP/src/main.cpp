@@ -149,9 +149,10 @@ int main(int, char**) {
     Framebuffer main_framebuffer(&depth, std::array{&lit});
     Framebuffer tonemap_framebuffer(nullptr, std::array{&color});
 
+    Texture g_depth(window_size, ImageFormat::Depth32_FLOAT);
     Texture albedo(window_size, ImageFormat::RGBA8_sRGB);
     Texture normals(window_size, ImageFormat::RGBA8_UNORM);
-    Framebuffer g_buffer(&depth, std::array{&albedo, &normals});
+    Framebuffer g_buffer(&g_depth, std::array{&albedo, &normals});
 
     
     int nb_buffers = 2;
@@ -181,7 +182,7 @@ int main(int, char**) {
 
             albedo.bind(0);
             normals.bind(1);
-            depth.bind(2);
+            g_depth.bind(2);
 
             scene_view.deferred_render();
         }
