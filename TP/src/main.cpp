@@ -156,7 +156,7 @@ int main(int, char**) {
 
     
     int nb_buffers = 2;
-    Texture *buffers[nb_buffers] = { &albedo, &normals };
+    Texture *buffers[] = { &albedo, &normals };
     int buffer_index = 0;
     for(;;) {
         glfwPollEvents();
@@ -222,9 +222,9 @@ int main(int, char**) {
             // Choose debug buffer to display
             ImGui::InputInt("Display debug", &buffer_index);
             if (buffer_index >= nb_buffers + 1)  
-                buffer_index = nb_buffers + 1;
-            if (buffer_index < 0)
                 buffer_index = 0;
+            if (buffer_index < 0)
+                buffer_index = nb_buffers;
         }
         imgui.finish();
 

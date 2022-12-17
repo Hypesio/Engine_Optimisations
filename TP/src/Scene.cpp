@@ -88,37 +88,33 @@ namespace OM3D
         }
         light_buffer.bind(BufferUsage::Storage, 1);
 
-
         // Draw instanced
         for (const std::vector<size_t> &instanceList : _instanceGroups)
         {
-            // TODO Instance culling
-            size_t nb_instances = instanceList.size();
+            size_t nb_instances_max = instanceList.size();
 
             const std::shared_ptr<Material> material = _objects[instanceList[0]].get_material();
             const std::shared_ptr<StaticMesh> mesh = _objects[instanceList[0]].get_mesh();
+            
             // Init SSBO for models
-            // TODO utiliser la lib
-            uint model_buffer;
-            glGenBuffers(1, &model_buffer);
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, model_buffer);
-
             std::vector<glm::mat4> models;
-            for (size_t i = 0; i < nb_instances; i++)
+            for (size_t i = 0; i < nb_instances_max; i++)
             {
                 const SceneObject& obj = _objects[instanceList[i]];
-                if (obj.get_mesh()->is_visible(camera, frustum))
+                // Instance culling
+                if (obj.is_visible(camera, frustum))
                     models.push_back(obj.transform());
             }
-            nb_instances = models.size();
+            size_t nb_instances = models.size();
+            if (nb_instances == 0)
+                continue;
 
-            glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * nb_instances, models.data(), GL_DYNAMIC_DRAW);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, model_buffer);
-            // bind other important models
+            TypedBuffer<glm::mat4> model_buffer(models.data(), nb_instances);
+            model_buffer.bind(BufferUsage::Storage, 2);
+
             material->bind();
             mesh->bind_enable();
 
-            // Provoque core dumped /!
             glDrawElementsInstanced(GL_TRIANGLES, int(mesh->get_index_buffer().element_count()), GL_UNSIGNED_INT, 0, nb_instances);
         }
     }

@@ -22,7 +22,7 @@ class SceneObject : NonCopyable {
         void set_transform(const glm::mat4& tr);
         const glm::mat4& transform() const;
         bool same_type(const SceneObject& rhs);
-
+        
         const std::shared_ptr<Material> get_material() const {
             return _material;
         } 
@@ -31,10 +31,12 @@ class SceneObject : NonCopyable {
             return _mesh;
         } 
 
-        float get_scale();
+        bool is_visible(Camera camera, Frustum frustum) const;
 
     private:
         glm::mat4 _transform = glm::mat4(1.0f);
+        glm::vec3 _position = glm::vec3(0, 0, 0);
+        glm::vec3 _scale = glm::vec3(1, 1, 1);
 
         std::shared_ptr<StaticMesh> _mesh;
         std::shared_ptr<Material> _material;

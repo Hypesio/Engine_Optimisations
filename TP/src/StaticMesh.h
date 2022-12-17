@@ -34,17 +34,17 @@ namespace OM3D
 
         StaticMesh(const MeshData &data);
         
-        bool is_visible(Camera camera, Frustum frustum);
         void draw() const;
         void bind_enable() const;
         const TypedBuffer<u32>& get_index_buffer() const {
             return _index_buffer;
         }
 
+        BoundingSphere _bounding_sphere;
+
     private:
         TypedBuffer<Vertex> _vertex_buffer;
         TypedBuffer<u32> _index_buffer;
-        BoundingSphere _bounding_sphere;
     };
 
 }
