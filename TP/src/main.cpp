@@ -94,16 +94,16 @@ std::unique_ptr<Scene> create_default_scene() {
     // Add lights
     {
         PointLight light;
-        light.set_position(glm::vec3(1.0f, 2.0f, 4.0f));
-        light.set_color(glm::vec3(0.0f, 10.0f, 0.0f));
+        light.set_position(glm::vec3(1.0f, 2.0f, 100.0f));
+        light.set_color(glm::vec3(255.0f, 255.0f, 255.0f));
         light.set_radius(100.0f);
         scene->add_object(std::move(light));
     }
     {
         PointLight light;
-        light.set_position(glm::vec3(1.0f, 2.0f, -4.0f));
-        light.set_color(glm::vec3(10.0f, 0.0f, 0.0f));
-        light.set_radius(50.0f);
+        light.set_position(glm::vec3(1.0f, 50.0f, -4.0f));
+        light.set_color(glm::vec3(255.0f, 255.0f, 255.0f));
+        light.set_radius(100.0f);
         scene->add_object(std::move(light));
     }
 
@@ -156,7 +156,6 @@ int main(int, char**) {
     plight_mat.set_program(plight_program);
     plight_mat.set_cull_mode(CullMode::Frontface);
     plight_mat.set_blend_mode(BlendMode::Additive);
-    //plight_mat.set_depth_test_mode(DepthTestMode::None);
     plight_mat.set_depth_test_mode(DepthTestMode::Reversed);
     plight_mat.set_depth_mask(GL_FALSE);
 
@@ -210,6 +209,8 @@ int main(int, char**) {
             albedo.bind(0);
             normals.bind(1);
             g_depth.bind(2);
+
+            plight_mat.set_uniform("window_size", window_size);
 
             std::shared_ptr<StaticMesh> sphere_mesh = sphere_scene.get()->get_mesh(0);
             scene_view.point_lights_render(sphere_mesh);

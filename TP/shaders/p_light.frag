@@ -6,7 +6,7 @@ layout(location = 0) in vec2 in_uv;
 
 layout(location = 0) out vec4 out_color;
 
-uniform mat4 invert_view_projection;
+uniform vec2 window_size;
 
 layout(binding = 0) uniform sampler2D in_albedo;
 layout(binding = 1) uniform sampler2D in_normal;
@@ -33,17 +33,17 @@ void main() {
     float depth = texelFetch(in_depth, coord, 0).x;
 
     if (depth > 0.0) {
-        vec3 position = unproject(coord, depth, frame.camera.view_proj);
+        vec3 position = unproject(coord / window_size, depth, frame.camera.inv_view_proj);
 
         const vec3 to_light = (point_light.position - position);
         const float dist = length(to_light);
 
         const vec3 light_vec = to_light / dist;
 
-        const float NoL = dot(light_vec, normal);
-        const float att = attenuation(dist, point_light.radius);
+        const float NoL = max(0.0, dot(light_vec, normal));
+        const float att = attenuation(dist, point_light.radius, 0.1);
 
-        vec3 lit = point_light.color;// * (NoL * att);
+        vec3 lit = point_light.color * NoL * att;
 
         out_color = vec4(albedo * lit, 1.0);
     }
