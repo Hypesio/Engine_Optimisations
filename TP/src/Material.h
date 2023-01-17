@@ -1,6 +1,8 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
+#include <glad/glad.h>
+
 #include <Program.h>
 #include <Texture.h>
 
@@ -12,11 +14,13 @@ namespace OM3D {
 enum class BlendMode {
     None,
     Alpha,
+    Additive,
 };
 
 enum class CullMode {
     None, 
     Backface,
+    Frontface,
 };
 
 enum class DepthTestMode {
@@ -33,7 +37,9 @@ class Material {
 
         void set_program(std::shared_ptr<Program> prog);
         void set_blend_mode(BlendMode blend);
+        void set_cull_mode(CullMode cull);
         void set_depth_test_mode(DepthTestMode depth);
+        void set_depth_mask(GLboolean mask);
         void set_texture(u32 slot, std::shared_ptr<Texture> tex);
 
         template<typename... Args>
@@ -56,7 +62,7 @@ class Material {
         BlendMode _blend_mode = BlendMode::None;
         DepthTestMode _depth_test_mode = DepthTestMode::Standard;
         CullMode _culling_mode = CullMode::Backface; 
-
+        GLboolean _depth_mask = GL_TRUE;
 };
 
 }

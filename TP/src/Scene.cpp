@@ -38,22 +38,6 @@ namespace OM3D
         }
         buffer.bind(BufferUsage::Uniform, 0);
 
-        // Fill and bind lights buffer
-        TypedBuffer<shader::PointLight> light_buffer(nullptr, std::max(_point_lights.size(), size_t(1)));
-        {
-            auto mapping = light_buffer.map(AccessType::WriteOnly);
-            for (size_t i = 0; i != _point_lights.size(); ++i)
-            {
-                const auto &light = _point_lights[i];
-                mapping[i] = {
-                    light.position(),
-                    light.radius(),
-                    light.color(),
-                    0.0f};
-            }
-        }
-        light_buffer.bind(BufferUsage::Storage, 1);
-
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
 
@@ -119,9 +103,63 @@ namespace OM3D
         }
     }
 
+    void Scene::point_lights_render(const Camera &camera, std::shared_ptr<StaticMesh> sphere_mesh) const
+    {
+        Frustum frustum = camera.build_frustum();
+
+        // Fill and bind frame models buffer
+        TypedBuffer<shader::FrameData> buffer(nullptr, 1);
+        {
+            auto mapping = buffer.map(AccessType::WriteOnly);
+            mapping[0].camera.view_proj = camera.view_proj_matrix();
+            mapping[0].camera.inv_view_proj = glm::inverse(camera.view_proj_matrix());
+        }
+        buffer.bind(BufferUsage::Uniform, 0);
+
+        for (size_t i = 0; i < _point_lights.size(); i++) 
+        {
+            // TODO compute only on point lights in the frustum
+            const auto &pos = _point_lights[i].position();
+            const auto &radius = _point_lights[i].radius();
+
+            BoundingSphere bounds = { pos, radius };
+            if (!bounds.is_visible(camera, frustum))
+                continue;
+
+            // Fill and bind light buffer
+            TypedBuffer<shader::PointLight> light_buffer(nullptr, 1);
+            {
+                auto mapping = light_buffer.map(AccessType::WriteOnly);
+                mapping[0] = {
+                    pos,
+                    radius,
+                    _point_lights[i].color(),
+                    0.0f};
+            }
+            light_buffer.bind(BufferUsage::Uniform, 1);
+            
+            glm::mat4 transform = glm::mat4(0.0f);
+            // Scale
+            transform[0][0] = radius;
+            transform[1][1] = radius;
+            transform[2][2] = radius;
+            // Translation
+            transform[0][3] = pos[0];
+            transform[1][3] = pos[1];
+            transform[2][3] = pos[2];
+            // final one
+            transform[3][3] = 1.0f;
+            
+            transform = glm::transpose(transform);
+            TypedBuffer<glm::mat4> model_buffer(&transform, 1);
+            model_buffer.bind(BufferUsage::Uniform, 2);
+
+            sphere_mesh->draw();
+        }
+    }
+
     void Scene::order_objects_in_lists()
     {
-
         // TODO Could be better to do this directly when the object is added to _objects list
         _instanceGroups = std::vector<std::vector<size_t>>();
 
@@ -148,4 +186,8 @@ namespace OM3D
         }
     }
 
+    const std::shared_ptr<StaticMesh> Scene::get_mesh(size_t obj_index) const
+    {
+        return _objects[obj_index].get_mesh();
+    }
 }

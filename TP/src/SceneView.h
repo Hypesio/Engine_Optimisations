@@ -15,6 +15,7 @@ class SceneView {
 
         void render() const;
         void deferred_render() const;
+        void point_lights_render(std::shared_ptr<StaticMesh> sphere_mesh) const;
 
     private:
         const Scene* _scene = nullptr;

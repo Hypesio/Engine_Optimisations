@@ -21,6 +21,8 @@ namespace OM3D
         return glm::dot(dir, frustum._bottom_normal) > -r && glm::dot(dir, frustum._top_normal) > -r && glm::dot(dir, frustum._near_normal) > -r && glm::dot(dir, frustum._left_normal) > -r && glm::dot(dir, frustum._right_normal) > -r;
     }
 
+    
+
     void SceneObject::render(Camera camera, Frustum frustum) const
     {
         if (!_material || !_mesh)

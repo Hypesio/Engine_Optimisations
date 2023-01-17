@@ -19,4 +19,3 @@ struct PointLight {
     vec3 color;
     float padding_1;
 };
-

@@ -22,6 +22,15 @@ namespace OM3D
     {
         glm::vec3 center_pos;
         float radius;
+
+        bool is_visible(Camera camera, Frustum frustum)
+        {
+            // Frustum culling
+            glm::vec3 dir = glm::vec3(glm::vec4(center_pos, 1.0)) - camera.position();
+            float r = radius;
+
+            return glm::dot(dir, frustum._bottom_normal) > -r && glm::dot(dir, frustum._top_normal) > -r && glm::dot(dir, frustum._near_normal) > -r && glm::dot(dir, frustum._left_normal) > -r && glm::dot(dir, frustum._right_normal) > -r;
+        }
     };
 
     class StaticMesh : NonCopyable
@@ -33,10 +42,11 @@ namespace OM3D
         StaticMesh &operator=(StaticMesh &&) = default;
 
         StaticMesh(const MeshData &data);
-        
+
         void draw() const;
         void bind_enable() const;
-        const TypedBuffer<u32>& get_index_buffer() const {
+        const TypedBuffer<u32> &get_index_buffer() const
+        {
             return _index_buffer;
         }
 

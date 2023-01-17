@@ -17,8 +17,16 @@ void Material::set_blend_mode(BlendMode blend) {
     _blend_mode = blend;
 }
 
+void Material::set_cull_mode(CullMode cull) {
+    _culling_mode = cull;
+}
+
 void Material::set_depth_test_mode(DepthTestMode depth) {
     _depth_test_mode = depth;
+}
+
+void Material::set_depth_mask(GLboolean mask) {
+    _depth_mask = mask;
 }
 
 void Material::set_texture(u32 slot, std::shared_ptr<Texture> tex) {
@@ -38,6 +46,11 @@ void Material::bind() const {
         case BlendMode::Alpha:
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        break;
+
+        case BlendMode::Additive:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_ONE, GL_ONE);
         break;
     }
 
@@ -64,11 +77,18 @@ void Material::bind() const {
         break;
     }
 
+    glDepthMask(_depth_mask);
+
     switch(_culling_mode) {
         case CullMode::None: 
             glDisable(GL_CULL_FACE);
             break; 
         case CullMode::Backface: 
+            glCullFace(GL_BACK);
+            glEnable(GL_CULL_FACE); 
+            break;  
+        case CullMode::Frontface: 
+            glCullFace(GL_FRONT);
             glEnable(GL_CULL_FACE); 
             break; 
     }

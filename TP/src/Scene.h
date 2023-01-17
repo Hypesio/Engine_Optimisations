@@ -20,11 +20,12 @@ class Scene : NonMovable {
 
         void render(const Camera& camera) const;
         void deferred_render(const Camera &camera) const;
-        
-
+        void point_lights_render(const Camera &camera, std::shared_ptr<StaticMesh> sphere_mesh) const;
+    
         void add_object(SceneObject obj);
         void add_object(PointLight obj);
-        void order_objects_in_lists(); 
+        void order_objects_in_lists();
+        const std::shared_ptr<StaticMesh> get_mesh(size_t obj_index) const;
 
     private:
         std::vector<SceneObject> _objects;
