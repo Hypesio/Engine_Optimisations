@@ -13,7 +13,8 @@ class SceneView {
         Camera& camera();
         const Camera& camera() const;
 
-        void render(bool only_transparent) const;
+        void render() const;
+        void render_transparent(Texture &head_list) const;
         void deferred_render() const;
         void point_lights_render(std::shared_ptr<StaticMesh> sphere_mesh) const;
 

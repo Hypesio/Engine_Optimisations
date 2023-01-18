@@ -41,7 +41,7 @@ namespace OM3D
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
 
-    void Scene::render(const Camera &camera, bool only_transparent) const
+    void Scene::render(const Camera &camera) const
     {
         Frustum frustum = camera.build_frustum();
 
@@ -72,45 +72,87 @@ namespace OM3D
         }
         light_buffer.bind(BufferUsage::Storage, 1);
 
-        if (only_transparent)
+        // Draw instanced
+        for (const std::vector<size_t> &instanceList : _instanceGroups)
         {
-            for (const std::vector<size_t> &instanceList : _transparentInstanceGroups)
+            size_t nb_instances_max = instanceList.size();
+
+            // Init SSBO for models
+            std::vector<glm::mat4> models;
+            for (size_t i = 0; i < nb_instances_max; i++)
             {
-                for (const size_t &obj_index : instanceList)
-                {
-                    _objects[obj_index].render(camera, frustum);
-                }
+                const SceneObject &obj = _objects[instanceList[i]];
+                // Instance culling
+                if (obj.is_visible(camera, frustum))
+                    models.push_back(obj.transform());
+            }
+            size_t nb_instances = models.size();
+            if (nb_instances == 0)
+                continue;
+
+            const std::shared_ptr<Material> material = _objects[instanceList[0]].get_material();
+            const std::shared_ptr<StaticMesh> mesh = _objects[instanceList[0]].get_mesh();
+            material->bind();
+            mesh->bind_enable();
+
+            TypedBuffer<glm::mat4> model_buffer(models.data(), nb_instances);
+            model_buffer.bind(BufferUsage::Storage, 2);
+
+            glDrawElementsInstanced(GL_TRIANGLES, int(mesh->get_index_buffer().element_count()), GL_UNSIGNED_INT, 0, nb_instances);
+        }
+    }
+
+    void Scene::render_transparent(const Camera &camera, Texture &head_list) const
+    {
+        Frustum frustum = camera.build_frustum();
+
+        // Fill and bind frame models buffer
+        TypedBuffer<shader::FrameData> buffer(nullptr, 1);
+        {
+            auto mapping = buffer.map(AccessType::WriteOnly);
+            mapping[0].camera.view_proj = camera.view_proj_matrix();
+            mapping[0].point_light_count = u32(_point_lights.size());
+            mapping[0].sun_color = glm::vec3(1.0f, 1.0f, 1.0f);
+            mapping[0].sun_dir = glm::normalize(_sun_direction);
+        }
+        buffer.bind(BufferUsage::Uniform, 0);
+
+        // Fill and bind lights buffer
+        TypedBuffer<shader::PointLight> light_buffer(nullptr, std::max(_point_lights.size(), size_t(1)));
+        {
+            auto mapping = light_buffer.map(AccessType::WriteOnly);
+            for (size_t i = 0; i != _point_lights.size(); ++i)
+            {
+                const auto &light = _point_lights[i];
+                mapping[i] = {
+                    light.position(),
+                    light.radius(),
+                    light.color(),
+                    0.0f};
             }
         }
-        else
+        light_buffer.bind(BufferUsage::Storage, 1);
+
+        TypedBuffer<glm::vec3> camera_pos(&camera.position(), 1);
+        camera_pos.bind(BufferUsage::Uniform, 1);
+
+        // Bind image2D HeadTexture;
+        head_list.bind_as_image(0, AccessType::ReadWrite);
+        size_t ll_size = head_list.size().x * head_list.size().y * 5;
+
+        // Bind SSBO - ListNodes
+        TypedBuffer<shader::PixelNode> linked_list_buffer(nullptr, ll_size);
+        linked_list_buffer.bind(BufferUsage::Storage, 1);
+
+        // TODO Bind AtomicCounter
+
+        //glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer); 
+         
+        for (const std::vector<size_t> &instanceList : _transparentInstanceGroups)
         {
-            // Draw instanced
-            for (const std::vector<size_t> &instanceList : _instanceGroups)
+            for (const size_t &obj_index : instanceList)
             {
-                size_t nb_instances_max = instanceList.size();
-
-                // Init SSBO for models
-                std::vector<glm::mat4> models;
-                for (size_t i = 0; i < nb_instances_max; i++)
-                {
-                    const SceneObject &obj = _objects[instanceList[i]];
-                    // Instance culling
-                    if (obj.is_visible(camera, frustum))
-                        models.push_back(obj.transform());
-                }
-                size_t nb_instances = models.size();
-                if (nb_instances == 0)
-                    continue;
-
-                const std::shared_ptr<Material> material = _objects[instanceList[0]].get_material();
-                const std::shared_ptr<StaticMesh> mesh = _objects[instanceList[0]].get_mesh();
-                material->bind();
-                mesh->bind_enable();
-
-                TypedBuffer<glm::mat4> model_buffer(models.data(), nb_instances);
-                model_buffer.bind(BufferUsage::Storage, 2);
-
-                glDrawElementsInstanced(GL_TRIANGLES, int(mesh->get_index_buffer().element_count()), GL_UNSIGNED_INT, 0, nb_instances);
+                _objects[obj_index].render(camera, frustum);
             }
         }
     }

@@ -148,7 +148,7 @@ int main(int, char**) {
     auto tonemap_program = Program::from_file("tonemap.comp");
     auto deferred_program = Program::from_files("deferred.frag", "screen.vert");
     auto plight_program = Program::from_files("p_light.frag", "volume.vert");
-    auto transparent_program = Program::from_files("transparency.frag", "basic.vert", std::array<std::string, 2>{"TEXTURED", "NORMAL_MAPPED"});
+    auto transparent_program = Program::from_files("transparency.frag", "transparency.vert", std::array<std::string, 2>{"TEXTURED", "NORMAL_MAPPED"});
     scene->force_transparency(transparent_program);
 
     auto deferred_mat = Material();
@@ -164,8 +164,6 @@ int main(int, char**) {
     plight_mat.set_depth_test_mode(DepthTestMode::Reversed);
     plight_mat.set_depth_mask(GL_FALSE);
 
-    auto transparent_mat = Material();
-
     Texture depth(window_size, ImageFormat::Depth32_FLOAT);
     Texture lit(window_size, ImageFormat::RGBA16_FLOAT);
     Texture color(window_size, ImageFormat::RGBA8_UNORM);
@@ -178,6 +176,7 @@ int main(int, char**) {
     Framebuffer g_buffer(&g_depth, std::array{&albedo, &normals});
     Framebuffer main_framebuffer(&g_depth, std::array{&lit});
 
+    Texture oit_head_list(window_size, ImageFormat::Depth32_FLOAT);
     
     int nb_buffers = 2;
     Texture *buffers[] = { &albedo, &normals };
@@ -197,7 +196,7 @@ int main(int, char**) {
         // Render the scene
         {
             g_buffer.bind();
-            scene_view.render(false);
+            scene_view.render();
         }
 
         // Deferred operations
@@ -224,8 +223,7 @@ int main(int, char**) {
             scene_view.point_lights_render(sphere_mesh);
 
             // Forward rendering of transparent objects
-            // TODO bind right program
-            scene_view.render(true);
+            scene_view.render_transparent(oit_head_list);
         }
 
         // Apply a tonemap in compute shader

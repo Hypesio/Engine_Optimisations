@@ -19,3 +19,9 @@ struct PointLight {
     vec3 color;
     float padding_1;
 };
+
+struct PixelNode {
+    vec4 color;
+    float depth;
+    uint prev;
+};

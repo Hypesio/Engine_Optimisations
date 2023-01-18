@@ -14,9 +14,14 @@ layout(location = 2) in vec3 in_color;
 layout(location = 3) in vec3 in_position;
 layout(location = 4) in vec3 in_tangent;
 layout(location = 5) in vec3 in_bitangent;
+layout(location = 6) in float depth; 
+
+layout(offset = 0, binding = 0) uniform atomic_uint counter;
 
 layout(binding = 0) uniform sampler2D in_texture;
 layout(binding = 1) uniform sampler2D in_normal_texture;
+
+layout(binding = 0) uniform volatile image2D head_texture;
 
 layout(binding = 0) uniform Data {
     FrameData frame;
@@ -25,6 +30,10 @@ layout(binding = 0) uniform Data {
 layout(binding = 1) buffer PointLights {
     PointLight point_lights[];
 };
+
+layout(binding = 2) buffer LinkedList {
+    PixelNode nodes[];
+}
 
 const vec3 ambient = vec3(0.0);
 
@@ -66,5 +75,13 @@ void main() {
 #endif
 
     out_color[3] = 0.5;
+
+    uint idx = atomicCounterIncrement(counter) + 1u;
+    // if (idx < imageSize)
+    {
+        uint prev = imageAtomicExchange(head_texture, gl_FragCoord.xy, idx);
+        PixelNode node = { out_color, depth, prev };
+        nodes[idx] = node;
+    }
 }
 
