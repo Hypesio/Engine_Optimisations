@@ -148,7 +148,7 @@ int main(int, char**) {
     auto tonemap_program = Program::from_file("tonemap.comp");
     auto deferred_program = Program::from_files("deferred.frag", "screen.vert");
     auto plight_program = Program::from_files("p_light.frag", "volume.vert");
-    auto transparent_program = Program::from_files("transparency.frag", "basic.vert");
+    auto transparent_program = Program::from_files("transparency.frag", "basic.vert", std::array<std::string, 2>{"TEXTURED", "NORMAL_MAPPED"});
     scene->force_transparency(transparent_program);
 
     auto deferred_mat = Material();

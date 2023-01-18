@@ -64,5 +64,7 @@ void main() {
 #ifdef DEBUG_NORMAL
     out_color = vec4(normal * 0.5 + 0.5, 1.0);
 #endif
+
+    out_color[3] = 0.5;
 }
 
