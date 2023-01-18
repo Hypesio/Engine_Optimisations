@@ -13,9 +13,9 @@ const Camera& SceneView::camera() const {
     return _camera;
 }
 
-void SceneView::render() const {
+void SceneView::render(bool only_transparent) const {
     if(_scene) {
-        _scene->render(_camera);
+        _scene->render(_camera, only_transparent);
     }
 }
 

@@ -30,7 +30,9 @@ namespace OM3D
             return;
         }
 
-        _material->set_uniform(HASH("model"), transform());
+        TypedBuffer<glm::mat4> model_buffer(&transform(), 1);
+        model_buffer.bind(BufferUsage::Storage, 2);
+        
         _material->bind();
         if (this->is_visible(camera, frustum))
             _mesh->draw();

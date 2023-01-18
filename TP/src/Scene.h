@@ -18,7 +18,7 @@ class Scene : NonMovable {
 
         static Result<std::unique_ptr<Scene>> from_gltf(const std::string& file_name);
 
-        void render(const Camera& camera) const;
+        void render(const Camera& camera, bool only_transparent) const;
         void deferred_render(const Camera &camera) const;
         void point_lights_render(const Camera &camera, std::shared_ptr<StaticMesh> sphere_mesh) const;
     
@@ -27,8 +27,11 @@ class Scene : NonMovable {
         void order_objects_in_lists();
         const std::shared_ptr<StaticMesh> get_mesh(size_t obj_index) const;
 
+        void force_transparency(std::shared_ptr<Program> prog); 
+
     private:
         std::vector<SceneObject> _objects;
+        std::vector<std::vector<size_t>> _transparentInstanceGroups;
         std::vector<std::vector<size_t>> _instanceGroups; 
         std::vector<PointLight> _point_lights;
         glm::vec3 _sun_direction = glm::vec3(0.2f, 1.0f, 0.1f);

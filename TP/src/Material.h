@@ -41,6 +41,7 @@ class Material {
         void set_depth_test_mode(DepthTestMode depth);
         void set_depth_mask(GLboolean mask);
         void set_texture(u32 slot, std::shared_ptr<Texture> tex);
+        bool is_transparent();
 
         template<typename... Args>
         void set_uniform(Args&&... args) {

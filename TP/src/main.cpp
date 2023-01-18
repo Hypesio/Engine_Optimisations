@@ -136,15 +136,20 @@ int main(int, char**) {
 
     std::unique_ptr<Scene> scene = create_default_scene();
     SceneView scene_view(scene.get());
+    // TODO - remove - find better examples of transparency
+    
 
     auto sphereSceneResult = Scene::from_gltf(std::string(data_path) + "sphere.glb");
     ALWAYS_ASSERT(sphereSceneResult.is_ok, "Unable to load default scene");
     std::unique_ptr<Scene> sphere_scene = std::move(sphereSceneResult.value);
     SceneView sphere_scene_view(sphere_scene.get());
 
+
     auto tonemap_program = Program::from_file("tonemap.comp");
     auto deferred_program = Program::from_files("deferred.frag", "screen.vert");
     auto plight_program = Program::from_files("p_light.frag", "volume.vert");
+    auto transparent_program = Program::from_files("transparency.frag", "basic.vert");
+    scene->force_transparency(transparent_program);
 
     auto deferred_mat = Material();
     deferred_mat.set_program(deferred_program);
@@ -159,6 +164,8 @@ int main(int, char**) {
     plight_mat.set_depth_test_mode(DepthTestMode::Reversed);
     plight_mat.set_depth_mask(GL_FALSE);
 
+    auto transparent_mat = Material();
+
     Texture depth(window_size, ImageFormat::Depth32_FLOAT);
     Texture lit(window_size, ImageFormat::RGBA16_FLOAT);
     Texture color(window_size, ImageFormat::RGBA8_UNORM);
@@ -170,6 +177,7 @@ int main(int, char**) {
     Texture normals(window_size, ImageFormat::RGBA8_UNORM);
     Framebuffer g_buffer(&g_depth, std::array{&albedo, &normals});
     Framebuffer main_framebuffer(&g_depth, std::array{&lit});
+
     
     int nb_buffers = 2;
     Texture *buffers[] = { &albedo, &normals };
@@ -189,9 +197,10 @@ int main(int, char**) {
         // Render the scene
         {
             g_buffer.bind();
-            scene_view.render();
+            scene_view.render(false);
         }
 
+        // Deferred operations
         {
             deferred_mat.bind();
             main_framebuffer.bind();
@@ -204,7 +213,6 @@ int main(int, char**) {
 
             // Compute deferred contribution of each visible point lights
             plight_mat.bind();
-            //pl_buffer.bind(false);
 
             albedo.bind(0);
             normals.bind(1);
@@ -214,6 +222,10 @@ int main(int, char**) {
 
             std::shared_ptr<StaticMesh> sphere_mesh = sphere_scene.get()->get_mesh(0);
             scene_view.point_lights_render(sphere_mesh);
+
+            // Forward rendering of transparent objects
+            // TODO bind right program
+            scene_view.render(true);
         }
 
         // Apply a tonemap in compute shader
