@@ -11,6 +11,7 @@
 #include <Texture.h>
 #include <Framebuffer.h>
 #include <ImGuiRenderer.h>
+#include <shader_structs.h>
 
 #include <imgui/imgui.h>
 
@@ -149,7 +150,7 @@ int main(int, char**) {
     auto deferred_program = Program::from_files("deferred.frag", "screen.vert");
     auto plight_program = Program::from_files("p_light.frag", "volume.vert");
     auto transparent_program = Program::from_files("transparency.frag", "transparency.vert", std::array<std::string, 2>{"TEXTURED", "NORMAL_MAPPED"});
-    //auto oit_compute_program = Program::from_file("transparency.comp");
+    auto oit_compute_program = Program::from_file("transparency.comp");
     // For arbitrary transparency of some objects for testing purpose
     scene->force_transparency(transparent_program);
 
@@ -168,6 +169,7 @@ int main(int, char**) {
 
     Texture depth(window_size, ImageFormat::Depth32_FLOAT);
     Texture lit(window_size, ImageFormat::RGBA16_FLOAT);
+    Texture transparent(window_size, ImageFormat::RGBA16_FLOAT);
     Texture color(window_size, ImageFormat::RGBA8_UNORM);
     
     Framebuffer tonemap_framebuffer(nullptr, std::array{&color});
@@ -177,9 +179,11 @@ int main(int, char**) {
     Texture normals(window_size, ImageFormat::RGBA8_UNORM);
     Framebuffer g_buffer(&g_depth, std::array{&albedo, &normals});
     Framebuffer main_framebuffer(&g_depth, std::array{&lit});
+
+    TypedBuffer<shader::PixelNode> linked_list_buffer(nullptr, window_size.x * window_size.y * 5);
     
     int nb_buffers = 2;
-    Texture *buffers[] = { &albedo, &normals };
+    Texture *buffers[] = { &albedo, &normals, &transparent };
     int buffer_index = 0;
     for(;;) {
         glfwPollEvents();
@@ -222,15 +226,34 @@ int main(int, char**) {
             std::shared_ptr<StaticMesh> sphere_mesh = sphere_scene.get()->get_mesh(0);
             scene_view.point_lights_render(sphere_mesh);
 
+            //auto mapping = linked_list_buffer.map(AccessType::ReadOnly);
+            /*for (int i = 0; i < 10; i++)
+            {
+                std::cout << mapping[i].color.x << "," << mapping[i].color.y << "," << mapping[i].color.z << "," << mapping[i].color.w << std::endl;
+            }*/
+
             // Forward rendering of transparent objects
             Texture oit_head_list(window_size, ImageFormat::R32_INT, -1);
-            scene_view.render_transparent(oit_head_list);
+            glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+            scene_view.render_transparent(oit_head_list, linked_list_buffer);
+            glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+
+            GLuint buffer; // handle to buffer
+            std::vector<shader::PixelNode> storage(10); // n is the size  
+            glGetNamedBufferSubData(linked_list_buffer.handle().get(), 0, 10 * sizeof(float), storage.data());
+            //auto mapping = linked_list_buffer.map(AccessType::ReadOnly);
+            for (int i = 0; i < 10; i++)
+            {
+                std::cout << storage[i].color.x << "," << storage[i].color.y << "," << storage[i].color.z << "," << storage[i].color.w << std::endl;
+            }
 
             // Compute to sort pixels values
-            //oit_compute_program->bind(); 
-            //lit.bind(0); // Bind actual result 
-            //color.bind_as_image(1, AccessType::WriteOnly); // Will write result on color image
-            //glDispatchCompute(align_up_to(window_size.x, 8), align_up_to(window_size.y, 8), 1);
+            oit_compute_program->bind(); 
+            lit.bind(0); // Bind actual result 
+            oit_head_list.bind_as_image(0, AccessType::ReadOnly); 
+            transparent.bind_as_image(1, AccessType::WriteOnly); // Will write result on color image
+            linked_list_buffer.bind(BufferUsage::Storage, 0);
+            glDispatchCompute(align_up_to(window_size.x, 8), align_up_to(window_size.y, 8), 1);
         }
 
         // Apply a tonemap in compute shader
@@ -241,7 +264,7 @@ int main(int, char**) {
             if (buffer_index > 0)
                 buffers[buffer_index - 1]->bind(0);
             else 
-                lit.bind(0);
+                transparent.bind(0);
 
             color.bind_as_image(1, AccessType::WriteOnly);
             glDispatchCompute(align_up_to(window_size.x, 8), align_up_to(window_size.y, 8), 1);

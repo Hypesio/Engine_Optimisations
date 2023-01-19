@@ -3,6 +3,7 @@
 
 #include <Scene.h>
 #include <Camera.h>
+#include <shader_structs.h>
 
 namespace OM3D {
 
@@ -14,7 +15,7 @@ class SceneView {
         const Camera& camera() const;
 
         void render() const;
-        void render_transparent(Texture &head_list) const;
+        void render_transparent(Texture &head_list, TypedBuffer<shader::PixelNode> &ll_buffer) const;
         void deferred_render() const;
         void point_lights_render(std::shared_ptr<StaticMesh> sphere_mesh) const;
 

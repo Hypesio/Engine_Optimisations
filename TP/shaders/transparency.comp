@@ -3,18 +3,18 @@
 layout(local_size_x = 8, local_size_y = 8) in;
 
 #include "utils.glsl"
+#define max_layers 14
+
 
 layout(binding = 0) uniform sampler2D in_color;
-layout(binding = 0) uniform readonly image2D tail_texture;
-layout(binding = 1) uniform writeonly image2D out_color;
+layout(r32i, binding = 0) uniform readonly iimage2D head_texture;
+layout(binding = 1) uniform writeonly image2D out_image;
 
-int max_layers = 14;
-
-layout(binding = 2) buffer LinkedList {
+layout(std430, binding = 0) buffer LinkedList {
     PixelNode nodes[];
-}
+};
 
-void order_list(PixelNode[] list, int size)
+void order_list(PixelNode list[max_layers], int size)
 {
     // Simple bubble sort for the moment
     int i, j;
@@ -34,7 +34,7 @@ void order_list(PixelNode[] list, int size)
     }
 }
 
-void insertion_sort(PixelNode[] list, int size, PixelNode element)
+void insertion_sort(PixelNode list[max_layers], int size, PixelNode element)
 {
     for (int i = 0; i < size; i++)
     {
@@ -55,40 +55,51 @@ void insertion_sort(PixelNode[] list, int size, PixelNode element)
 void main()
 {
     // Get the tail of the list
-    uint idx = imageLoad(tail_texture, gl_GlobalInvocationID.xy);
+    ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+    int idx = imageLoad(head_texture, coord).x;
 
-    if (idx < 0) // No transparency element on this pixel
-        return;
+    if (idx >= 0) // No transparency element on this pixel
+    {
+        // Build the full list
+        /*PixelNode full_list[max_layers];
+        int list_id = 0;
+        while (idx >= 0 && list_id < max_layers)
+        {
+            full_list[list_id++] = nodes[idx]; 
+            idx = int(nodes[idx].prev);
+        }
+        int size = list_id;
+
+        // Sort the list
+        order_list(full_list, size);
+
+        // Insertion sort all the remaining elements in list
+        while(idx >= 0)
+        {
+            PixelNode to_add = nodes[idx];
+            insertion_sort(full_list, max_layers, to_add);
+            idx = int(to_add.prev);
+        }*/
+
+        // Blend all values
+        vec4 node_color = nodes[idx].color;
+        if (node_color.x == 0)
+            node_color = vec4(1.0, 1.0, 1.0, 1.0);
+        vec4 color = texelFetch(in_color, coord, 0) + node_color;
+        /*int id = 0;
+        while (id <= size)
+        {
+            // Simple additive blending -- Should be alpha blending for better result
+            color += full_list[list_id++].color;
+        }*/
+
+        imageStore(out_image, coord, color);
+    }
+    else 
+    {
+        vec4 color = texelFetch(in_color, coord, 0);
+        imageStore(out_image, coord, color);
+    }
+
     
-    // Build the full list
-    PixelNode full_list[max_layers];
-    int list_id = 0;
-    while (idx >= 0 && size < max_layers)
-    {
-        full_list[list_id++] = nodes[idx]; 
-        idx = nodes.prev;
-    }
-    size = list_id;
-
-    // Sort the list
-    order_list(full_list, size);
-
-    // Insertion sort all the remaining elements in list
-    while(idx >= 0)
-    {
-        PixelNode to_add = nodes[idx];
-        insertion_sort(list, max_layers, to_add);
-        idx = to_add.prev;
-    }
-
-    // Blend all values
-    vec4 color = texelFetch(in_color, gl_GlobalInvocationID.xy, 0);
-    int id = 0;
-    while (id <= size)
-    {
-        // Simple additive blending -- Should be alpha blending for better result
-        color += full_list[id_list++].color;
-    }
-
-    imageStore(out_color, coord);
 }

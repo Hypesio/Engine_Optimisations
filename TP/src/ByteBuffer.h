@@ -22,10 +22,11 @@ class ByteBuffer : NonCopyable {
         size_t byte_size() const;
 
         BufferMapping<byte> map_bytes(AccessType access = AccessType::ReadWrite);
+        const GLHandle& handle() const;
 
     protected:
         void* map_internal(AccessType access);
-        const GLHandle& handle() const;
+        
 
     private:
         GLHandle _handle;

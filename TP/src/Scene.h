@@ -5,6 +5,7 @@
 #include <PointLight.h>
 #include <Camera.h>
 #include <Framebuffer.h>
+#include <shader_structs.h>
 
 #include <vector>
 #include <memory>
@@ -19,7 +20,7 @@ class Scene : NonMovable {
         static Result<std::unique_ptr<Scene>> from_gltf(const std::string& file_name);
 
         void render(const Camera& camera) const;
-        void render_transparent(const Camera& camera, Texture &head_list) const;
+        void render_transparent(const Camera& camera, Texture &head_list, TypedBuffer<shader::PixelNode> &ll_buffer) const;
         void deferred_render(const Camera &camera) const;
         void point_lights_render(const Camera &camera, std::shared_ptr<StaticMesh> sphere_mesh) const;
     

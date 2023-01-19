@@ -74,14 +74,18 @@ void main() {
     out_color = vec4(normal * 0.5 + 0.5, 1.0);
 #endif
 
-    out_color[3] = 0.5;
+    // TODO Remove - Force transparency of object
+    out_color[3] = 0.8;
 
     uint idx = atomicCounterIncrement(counter) + 1u;
     // if (idx < imageSize)
     {
         int prev = imageAtomicExchange(head_texture, ivec2(gl_FragCoord.xy), int(idx));
-        PixelNode node = { out_color, depth, prev };
+        PixelNode node = { out_color, depth, prev, vec2(0.5, 0.4) };
         nodes[idx] = node;
+        //imageStore(nodes,idx, node);
     }
+
+    out_color = nodes[idx].color;
 }
 

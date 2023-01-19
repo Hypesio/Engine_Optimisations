@@ -102,7 +102,7 @@ namespace OM3D
         }
     }
 
-    void Scene::render_transparent(const Camera &camera, Texture &head_list) const
+    void Scene::render_transparent(const Camera &camera, Texture &head_list, TypedBuffer<shader::PixelNode> &ll_buffer) const
     {
         Frustum frustum = camera.build_frustum();
 
@@ -140,17 +140,22 @@ namespace OM3D
 
         // Bind image2D HeadTexture;
         head_list.bind_as_image(0, AccessType::ReadWrite);
-        size_t ll_size = head_list.size().x * head_list.size().y * 5;
 
         // Bind SSBO - ListNodes
-        TypedBuffer<shader::PixelNode> linked_list_buffer(nullptr, ll_size);
-        linked_list_buffer.bind(BufferUsage::Storage, 1);
+        ll_buffer.bind(BufferUsage::Storage, 2);
 
         // TODO Bind AtomicCounter
         uint counter = 0;
-        TypedBuffer<uint> atomic_counter(&counter, 1);
-        atomic_counter.bind(BufferUsage::Atomic_counter);
-         
+        //TypedBuffer<uint> atomic_counter(&counter, 1);
+        //atomic_counter.bind(BufferUsage::Atomic_counter);
+        
+        GLuint atomicsBuffer;
+        glGenBuffers(1, &atomicsBuffer);
+        // bind the buffer and define its initial storage capacity
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer);
+        glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
+        glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomicsBuffer);
+
         for (const std::vector<size_t> &instanceList : _transparentInstanceGroups)
         {
             for (const size_t &obj_index : instanceList)
@@ -246,7 +251,8 @@ namespace OM3D
         {
             const SceneObject &obj = _objects[i];
 
-            if (obj.get_material()->is_transparent()) {
+            if (obj.get_material()->is_transparent())
+            {
                 add_object_in_group(_transparentInstanceGroups, _objects, obj, i);
             }
             else
@@ -263,7 +269,7 @@ namespace OM3D
     {
         for (size_t i = 0; i < _instanceGroups[1].size(); i++)
         {
-            _objects[_instanceGroups[1][i]].get_material()->set_blend_mode(BlendMode::Alpha); 
+            _objects[_instanceGroups[1][i]].get_material()->set_blend_mode(BlendMode::Alpha);
             _objects[_instanceGroups[1][i]].get_material()->set_program(prog);
         }
         this->order_objects_in_lists();
