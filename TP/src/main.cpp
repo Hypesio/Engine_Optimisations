@@ -149,6 +149,8 @@ int main(int, char**) {
     auto deferred_program = Program::from_files("deferred.frag", "screen.vert");
     auto plight_program = Program::from_files("p_light.frag", "volume.vert");
     auto transparent_program = Program::from_files("transparency.frag", "transparency.vert", std::array<std::string, 2>{"TEXTURED", "NORMAL_MAPPED"});
+    //auto oit_compute_program = Program::from_file("transparency.comp");
+    // For arbitrary transparency of some objects for testing purpose
     scene->force_transparency(transparent_program);
 
     auto deferred_mat = Material();
@@ -224,6 +226,11 @@ int main(int, char**) {
 
             // Forward rendering of transparent objects
             scene_view.render_transparent(oit_head_list);
+
+            // Compute to sort pixels values
+            //oit_compute_program->bind(); 
+            //color.bind_as_image(1, AccessType::WriteOnly); // Will write result on color image
+            //glDispatchCompute(align_up_to(window_size.x, 8), align_up_to(window_size.y, 8), 1);
         }
 
         // Apply a tonemap in compute shader
