@@ -177,8 +177,6 @@ int main(int, char**) {
     Texture normals(window_size, ImageFormat::RGBA8_UNORM);
     Framebuffer g_buffer(&g_depth, std::array{&albedo, &normals});
     Framebuffer main_framebuffer(&g_depth, std::array{&lit});
-
-    Texture oit_head_list(window_size, ImageFormat::Depth32_FLOAT);
     
     int nb_buffers = 2;
     Texture *buffers[] = { &albedo, &normals };
@@ -225,10 +223,12 @@ int main(int, char**) {
             scene_view.point_lights_render(sphere_mesh);
 
             // Forward rendering of transparent objects
+            Texture oit_head_list(window_size, ImageFormat::R32_INT, -1);
             scene_view.render_transparent(oit_head_list);
 
             // Compute to sort pixels values
             //oit_compute_program->bind(); 
+            //lit.bind(0); // Bind actual result 
             //color.bind_as_image(1, AccessType::WriteOnly); // Will write result on color image
             //glDispatchCompute(align_up_to(window_size.x, 8), align_up_to(window_size.y, 8), 1);
         }

@@ -133,7 +133,9 @@ namespace OM3D
         }
         light_buffer.bind(BufferUsage::Storage, 1);
 
-        TypedBuffer<glm::vec3> camera_pos(&camera.position(), 1);
+        glm::vec3 cam_pos = camera.position();
+        const glm::vec3 const_cam_pos = glm::vec3(cam_pos.x, cam_pos.y, cam_pos.z);
+        TypedBuffer<glm::vec3> camera_pos(&const_cam_pos, 1);
         camera_pos.bind(BufferUsage::Uniform, 1);
 
         // Bind image2D HeadTexture;
@@ -145,8 +147,9 @@ namespace OM3D
         linked_list_buffer.bind(BufferUsage::Storage, 1);
 
         // TODO Bind AtomicCounter
-
-        //glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer); 
+        uint counter = 0;
+        TypedBuffer<uint> atomic_counter(&counter, 1);
+        atomic_counter.bind(BufferUsage::Atomic_counter);
          
         for (const std::vector<size_t> &instanceList : _transparentInstanceGroups)
         {

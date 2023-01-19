@@ -86,7 +86,7 @@ void main()
     int id = 0;
     while (id <= size)
     {
-        // Simple additive blending
+        // Simple additive blending -- Should be alpha blending for better result
         color += full_list[id_list++].color;
     }
 

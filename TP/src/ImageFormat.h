@@ -12,7 +12,8 @@ enum class ImageFormat {
     RGB8_sRGB,
 
     RGBA16_FLOAT,
-    Depth32_FLOAT
+    Depth32_FLOAT,
+    R32_INT,
 };
 
 

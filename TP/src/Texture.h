@@ -31,6 +31,7 @@ class Texture {
 
         Texture(const TextureData& data);
         Texture(const glm::uvec2 &size, ImageFormat format);
+        Texture(const glm::uvec2 &size, ImageFormat format, int value);
 
         void bind(u32 index) const;
         void bind_as_image(u32 index, AccessType access);

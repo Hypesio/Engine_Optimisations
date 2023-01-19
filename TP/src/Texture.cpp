@@ -59,6 +59,18 @@ Texture::Texture(const glm::uvec2 &size, ImageFormat format) :
     glTextureStorage2D(_handle.get(), 1, gl_format.internal_format, _size.x, _size.y);
 }
 
+
+Texture::Texture(const glm::uvec2 &size, ImageFormat format, int value) :
+    _handle(create_texture_handle()),
+    _size(size),
+    _format(format) {
+    
+    const ImageFormatGL gl_format = image_format_to_gl(_format);
+    glTextureStorage2D(_handle.get(), 1, gl_format.internal_format, _size.x, _size.y);
+    std::vector<int> data(size.x * size.y, value);
+    glTextureSubImage2D(_handle.get(), 0, 0, 0, _size.x, _size.y, gl_format.format, gl_format.component_type, data.data());
+}
+
 Texture::~Texture() {
     if(auto handle = _handle.get()) {
         glDeleteTextures(1, &handle);

@@ -35,6 +35,9 @@ u32 buffer_usage_to_gl(BufferUsage usage) {
 
         case BufferUsage::Storage:
             return GL_SHADER_STORAGE_BUFFER;
+            
+        case BufferUsage::Atomic_counter:
+            return GL_ATOMIC_COUNTER_BUFFER;
     }
 
     FATAL("Unknown usage value");

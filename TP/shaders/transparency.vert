@@ -19,7 +19,8 @@ layout(location = 6) out float depth;
 layout(binding = 0) uniform Data {
     FrameData frame;
 };
-layout(binding=1) uniform vec3 camera_pos; 
+
+uniform vec3 camera_pos; 
 
 layout(binding = 2) buffer Models {
     mat4 models[];
@@ -37,7 +38,7 @@ void main() {
     out_uv = in_uv;
     out_color = in_color;
     out_position = position.xyz;
-    depth = length(camera_pos - position.xyz)
+    depth = length(camera_pos - position.xyz);
     gl_Position = frame.camera.view_proj * position;
 }
 
