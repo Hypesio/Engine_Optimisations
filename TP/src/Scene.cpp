@@ -102,7 +102,7 @@ namespace OM3D
         }
     }
 
-    void Scene::render_transparent(const Camera &camera, Texture &head_list, TypedBuffer<shader::PixelNode> &ll_buffer) const
+    void Scene::render_transparent(const Camera &camera, Texture &head_list, Texture &ll_buffer) const
     {
         Frustum frustum = camera.build_frustum();
 
@@ -142,20 +142,12 @@ namespace OM3D
         head_list.bind_as_image(0, AccessType::ReadWrite);
 
         // Bind SSBO - ListNodes
-        ll_buffer.bind(BufferUsage::Storage, 2);
+        ll_buffer.bind_as_buffer();
 
-        // TODO Bind AtomicCounter
         uint counter = 0;
-        //TypedBuffer<uint> atomic_counter(&counter, 1);
-        //atomic_counter.bind(BufferUsage::Atomic_counter);
-        
         GLuint atomicsBuffer;
-        glGenBuffers(1, &atomicsBuffer);
-        // bind the buffer and define its initial storage capacity
-        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer);
-        glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &counter, GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomicsBuffer);
-
+        ByteBuffer::bind_atomic_buffer(atomicsBuffer, counter);
+        
         for (const std::vector<size_t> &instanceList : _transparentInstanceGroups)
         {
             for (const size_t &obj_index : instanceList)

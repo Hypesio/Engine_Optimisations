@@ -5,28 +5,24 @@ layout(local_size_x = 8, local_size_y = 8) in;
 #include "utils.glsl"
 #define max_layers 14
 
-
 layout(binding = 0) uniform sampler2D in_color;
-layout(r32i, binding = 0) uniform readonly iimage2D head_texture;
+layout(r32ui, binding = 0) uniform readonly uimage2D head_texture;
 layout(binding = 1) uniform writeonly image2D out_image;
+layout(rgba32ui, binding = 0) uniform uimageBuffer data_list;
 
-layout(std430, binding = 0) buffer LinkedList {
-    PixelNode nodes[];
-};
-
-void order_list(PixelNode list[max_layers], int size)
+void order_list(uvec4 list[max_layers], uint size)
 {
     // Simple bubble sort for the moment
-    int i, j;
+    uint i, j;
     for (i = 0; i < size - 1; i++)
     {
         // Last i elements are already
         // in place
         for (j = 0; j < size - i - 1; j++) 
         {
-            if (list[j].depth < list[j + 1].depth)
+            if (list[j].z < list[j + 1].z)
             {
-                PixelNode tmp = list[j]; 
+                uvec4 tmp = list[j]; 
                 list[j] = list[j + 1]; 
                 list[j + 1] = tmp;
             }
@@ -34,17 +30,17 @@ void order_list(PixelNode list[max_layers], int size)
     }
 }
 
-void insertion_sort(PixelNode list[max_layers], int size, PixelNode element)
+void insertion_sort(uvec4 list[max_layers], uint size, uvec4 element)
 {
-    for (int i = 0; i < size; i++)
+    for (uint i = 0; i < size; i++)
     {
-        if (list[i].depth < element.depth)
+        if (list[i].z < element.z)
         {
-            PixelNode prev = list[i];
+            uvec4 prev = list[i];
             list[i] = element;
-            for (int j = i + 1; j < size; j++)
+            for (uint j = i + 1; j < size; j++)
             {
-                PixelNode tmp = list[j];
+                uvec4 tmp = list[j];
                 list[j] = prev; 
                 prev = tmp;
             }
@@ -56,42 +52,47 @@ void main()
 {
     // Get the tail of the list
     ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-    int idx = imageLoad(head_texture, coord).x;
+    uint idx = imageLoad(head_texture, coord).x;
 
-    if (idx >= 0) // No transparency element on this pixel
+    if (idx > 0) // No transparency element on this pixel
     {
         // Build the full list
-        /*PixelNode full_list[max_layers];
-        int list_id = 0;
-        while (idx >= 0 && list_id < max_layers)
+        uvec4 full_list[max_layers];
+        uint list_id = 0;
+
+        while (idx > 0 && list_id < max_layers)
         {
-            full_list[list_id++] = nodes[idx]; 
-            idx = int(nodes[idx].prev);
+            uvec4 node_infos = imageLoad(data_list, int(idx));
+            full_list[list_id++] = node_infos; 
+            idx = node_infos.w;
         }
-        int size = list_id;
+        uint size = list_id;
 
         // Sort the list
-        order_list(full_list, size);
+        //order_list(full_list, size);
 
         // Insertion sort all the remaining elements in list
-        while(idx >= 0)
+        /*while(idx > 0)
         {
-            PixelNode to_add = nodes[idx];
+            uvec4 to_add = data_list[idx];
             insertion_sort(full_list, max_layers, to_add);
-            idx = int(to_add.prev);
+            idx = int(to_add.w);
         }*/
 
         // Blend all values
-        vec4 node_color = nodes[idx].color;
-        if (node_color.x == 0)
-            node_color = vec4(1.0, 1.0, 1.0, 1.0);
-        vec4 color = texelFetch(in_color, coord, 0) + node_color;
-        /*int id = 0;
-        while (id <= size)
+        //uvec4 node_infos = full_list[0];
+        //vec4 node_color = vec4(unpackHalf2x16(node_infos.x), unpackHalf2x16(node_infos.y));
+        //if (node_color.x == 0)
+        //    node_color = vec4(1.0, 1.0, 1.0, 1.0);
+        vec4 color = texelFetch(in_color, coord, 0);// + node_color;
+        uint id = 0;
+        while (id < 2)
         {
             // Simple additive blending -- Should be alpha blending for better result
-            color += full_list[list_id++].color;
-        }*/
+            uvec4 node_infos = full_list[id++];
+            vec4 node_color = vec4(unpackHalf2x16(node_infos.x), unpackHalf2x16(node_infos.y));
+            color += node_color;
+        }
 
         imageStore(out_image, coord, color);
     }

@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include <glm/vec4.hpp>
 
 namespace OM3D {
 
@@ -39,6 +40,18 @@ static GLuint create_texture_handle() {
     return handle;
 }
 
+static GLuint create_texture_buffer_handle() {
+    GLuint handle = 0;
+    glCreateTextures(GL_TEXTURE_BUFFER, 1, &handle);
+    return handle;
+}
+
+static GLuint create_buffer_handle() {
+    GLuint handle = 0;
+    glGenBuffers(1, &handle);
+    return handle;
+}
+
 Texture::Texture(const TextureData& data) :
     _handle(create_texture_handle()),
     _size(data.size),
@@ -59,7 +72,6 @@ Texture::Texture(const glm::uvec2 &size, ImageFormat format) :
     glTextureStorage2D(_handle.get(), 1, gl_format.internal_format, _size.x, _size.y);
 }
 
-
 Texture::Texture(const glm::uvec2 &size, ImageFormat format, int value) :
     _handle(create_texture_handle()),
     _size(size),
@@ -69,6 +81,19 @@ Texture::Texture(const glm::uvec2 &size, ImageFormat format, int value) :
     glTextureStorage2D(_handle.get(), 1, gl_format.internal_format, _size.x, _size.y);
     std::vector<int> data(size.x * size.y, value);
     glTextureSubImage2D(_handle.get(), 0, 0, 0, _size.x, _size.y, gl_format.format, gl_format.component_type, data.data());
+}
+
+Texture::Texture(const size_t buffer_size, ImageFormat format) :
+    _handle(create_texture_buffer_handle()),
+    _buffer_size(buffer_size),
+    _buffer_handle(create_buffer_handle()),
+    _format(format) {
+
+    glBindBuffer(GL_TEXTURE_BUFFER, _buffer_handle.get());
+    std::vector<glm::vec4> data(_buffer_size, glm::vec4(0.0, 0.0, 0.0, 0.0));
+    glBufferData(GL_TEXTURE_BUFFER, _buffer_size, data.data(), GL_DYNAMIC_DRAW);
+    const ImageFormatGL gl_format = image_format_to_gl(_format);
+    glTexBuffer(GL_TEXTURE_BUFFER, gl_format.internal_format, _buffer_handle.get());
 }
 
 Texture::~Texture() {
@@ -83,6 +108,10 @@ void Texture::bind(u32 index) const {
 
 void Texture::bind_as_image(u32 index, AccessType access) {
     glBindImageTexture(index, _handle.get(), 0, false, 0, access_type_to_gl(access), image_format_to_gl(_format).internal_format);
+}
+
+void Texture::bind_as_buffer() const {
+    glBindTexture(GL_TEXTURE_BUFFER, _handle.get());
 }
 
 const glm::uvec2& Texture::size() const {

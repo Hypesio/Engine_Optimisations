@@ -24,8 +24,11 @@ class ByteBuffer : NonCopyable {
         BufferMapping<byte> map_bytes(AccessType access = AccessType::ReadWrite);
         const GLHandle& handle() const;
 
+        static void bind_atomic_buffer(uint &atomics_buffer, uint& counter);
+
     protected:
         void* map_internal(AccessType access);
+    
         
 
     private:

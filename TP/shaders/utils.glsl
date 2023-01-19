@@ -59,3 +59,8 @@ vec3 unpack_normal_map(vec2 normal) {
     normal = normal * 2.0 - vec2(1.0);
     return vec3(normal, 1.0 - sqrt(dot(normal, normal)));
 }
+
+uint float_to_uint(float value)
+{
+    return uint(value * 256);
+}

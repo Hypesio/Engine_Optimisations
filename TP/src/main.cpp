@@ -180,7 +180,8 @@ int main(int, char**) {
     Framebuffer g_buffer(&g_depth, std::array{&albedo, &normals});
     Framebuffer main_framebuffer(&g_depth, std::array{&lit});
 
-    TypedBuffer<shader::PixelNode> linked_list_buffer(nullptr, window_size.x * window_size.y * 5);
+    //TypedBuffer<glm::vec4> linked_list_buffer(nullptr, window_size.x * window_size.y * 5);
+    Texture ll_buffer(window_size.x * window_size.y * 5, ImageFormat::RGBA_32UI);
     
     int nb_buffers = 2;
     Texture *buffers[] = { &albedo, &normals, &transparent };
@@ -233,26 +234,24 @@ int main(int, char**) {
             }*/
 
             // Forward rendering of transparent objects
-            Texture oit_head_list(window_size, ImageFormat::R32_INT, -1);
-            glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
-            scene_view.render_transparent(oit_head_list, linked_list_buffer);
-            glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+            Texture oit_head_list(window_size, ImageFormat::R32_UINT, 0);
+            scene_view.render_transparent(oit_head_list, ll_buffer);
 
-            GLuint buffer; // handle to buffer
+            /*GLuint buffer; // handle to buffer
             std::vector<shader::PixelNode> storage(10); // n is the size  
             glGetNamedBufferSubData(linked_list_buffer.handle().get(), 0, 10 * sizeof(float), storage.data());
             //auto mapping = linked_list_buffer.map(AccessType::ReadOnly);
             for (int i = 0; i < 10; i++)
             {
                 std::cout << storage[i].color.x << "," << storage[i].color.y << "," << storage[i].color.z << "," << storage[i].color.w << std::endl;
-            }
+            }*/
 
             // Compute to sort pixels values
             oit_compute_program->bind(); 
             lit.bind(0); // Bind actual result 
             oit_head_list.bind_as_image(0, AccessType::ReadOnly); 
             transparent.bind_as_image(1, AccessType::WriteOnly); // Will write result on color image
-            linked_list_buffer.bind(BufferUsage::Storage, 0);
+            ll_buffer.bind_as_buffer();
             glDispatchCompute(align_up_to(window_size.x, 8), align_up_to(window_size.y, 8), 1);
         }
 

@@ -21,7 +21,8 @@ layout(offset = 0, binding = 0) uniform atomic_uint counter;
 layout(binding = 0) uniform sampler2D in_texture;
 layout(binding = 1) uniform sampler2D in_normal_texture;
 
-layout(r32i, binding = 0) uniform iimage2D head_texture;
+layout(r32ui, binding = 0) uniform uimage2D head_texture;
+layout(rgba32ui, binding = 0) uniform uimageBuffer data_list;
 
 layout(binding = 0) uniform Data {
     FrameData frame;
@@ -29,10 +30,6 @@ layout(binding = 0) uniform Data {
 
 layout(binding = 1) buffer PointLights {
     PointLight point_lights[];
-};
-
-layout(binding = 2) buffer LinkedList {
-    PixelNode nodes[];
 };
 
 const vec3 ambient = vec3(0.0);
@@ -77,15 +74,15 @@ void main() {
     // TODO Remove - Force transparency of object
     out_color[3] = 0.8;
 
-    uint idx = atomicCounterIncrement(counter) + 1u;
-    // if (idx < imageSize)
+    int idx = int(atomicCounterIncrement(counter) + 1u);
+
     {
-        int prev = imageAtomicExchange(head_texture, ivec2(gl_FragCoord.xy), int(idx));
-        PixelNode node = { out_color, depth, prev, vec2(0.5, 0.4) };
-        nodes[idx] = node;
-        //imageStore(nodes,idx, node);
+        uint prev = imageAtomicExchange(head_texture, ivec2(gl_FragCoord.xy), idx);
+        uint color_rg = packHalf2x16(out_color.rg);
+        uint color_ba = packHalf2x16(out_color.ba);
+        imageStore(data_list, idx, uvec4(color_rg, color_ba, float_to_uint(depth), prev));
     }
 
-    out_color = nodes[idx].color;
+    out_color = vec4(0.0);
 }
 
