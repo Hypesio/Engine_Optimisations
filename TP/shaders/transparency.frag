@@ -20,6 +20,7 @@ layout(offset = 0, binding = 0) uniform atomic_uint counter;
 
 layout(binding = 0) uniform sampler2D in_texture;
 layout(binding = 1) uniform sampler2D in_normal_texture;
+layout(binding = 2) uniform sampler2D in_depth;
 
 layout(r32ui, binding = 1) uniform uimage2D head_texture;
 layout(rgba32ui, binding = 0) uniform uimageBuffer data_list;
@@ -35,6 +36,11 @@ layout(binding = 1) buffer PointLights {
 const vec3 ambient = vec3(0.0);
 
 void main() {
+    ivec2 coord = ivec2(gl_FragCoord.xy);
+    float depth_z = texelFetch(in_depth, coord, 0).x;
+    if (gl_FragCoord.z <= depth_z)
+        discard;
+
 #ifdef NORMAL_MAPPED
     const vec3 normal_map = unpack_normal_map(texture(in_normal_texture, in_uv).xy);
     const vec3 normal = normal_map.x * in_tangent +

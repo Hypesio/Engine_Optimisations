@@ -262,6 +262,8 @@ namespace OM3D
         for (size_t i = 0; i < _instanceGroups[1].size(); i++)
         {
             _objects[_instanceGroups[1][i]].get_material()->set_blend_mode(BlendMode::Alpha);
+            _objects[_instanceGroups[1][i]].get_material()->set_depth_mask(GL_FALSE);
+            _objects[_instanceGroups[1][i]].get_material()->set_depth_test_mode(DepthTestMode::Reversed);
             _objects[_instanceGroups[1][i]].get_material()->set_program(prog);
         }
         this->order_objects_in_lists();

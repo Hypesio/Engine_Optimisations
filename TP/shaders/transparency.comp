@@ -48,6 +48,11 @@ void insertion_sort(uvec4 list[max_layers], uint size, uvec4 element)
     }
 }
 
+vec4 blend(vec4 src, vec4 target, float alpha)
+{
+    return src * alpha + target * (1.0-alpha);
+}
+
 void main()
 {
     // Get the tail of the list
@@ -72,29 +77,25 @@ void main()
         uint size = list_id;
 
         // Sort the list
-        //order_list(full_list, size);
+        order_list(full_list, size);
 
         // Insertion sort all the remaining elements in list
-        /*while(idx > 0)
+        while(idx > 0)
         {
-            uvec4 to_add = data_list[idx];
+            uvec4 to_add = imageLoad(data_list, int(idx));
             insertion_sort(full_list, max_layers, to_add);
             idx = int(to_add.w);
-        }*/
+        }
 
         // Blend all values
-        //uvec4 node_infos = full_list[1];
-        //vec4 node_color = vec4(unpackHalf2x16(node_infos.x), unpackHalf2x16(node_infos.y));
-        //if (node_color.x == 0)
-        //    node_color = vec4(1.0, 1.0, 1.0, 1.0);
-        vec4 color = texelFetch(in_color, coord, 0);// + node_color;
+        vec4 color = texelFetch(in_color, coord, 0);
         uint id = 0;
         while (id < size)
         {
             // Simple additive blending -- Should be alpha blending for better result
             uvec4 node_infos = full_list[id++];
             vec4 node_color = vec4(unpackHalf2x16(node_infos.x), unpackHalf2x16(node_infos.y));
-            color += node_color;
+            color = blend(color, node_color, 0.5);
         }
 
         imageStore(out_image, coord, color);

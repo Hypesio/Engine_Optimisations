@@ -90,7 +90,7 @@ Texture::Texture(const size_t buffer_size, ImageFormat format) :
     _format(format) {
 
     std::vector<glm::vec4> data(_buffer_size, glm::vec4(0.0, 0.0, 0.0, 0.0));
-    glNamedBufferStorage(_buffer_handle.get(), _buffer_size, data.data(), GL_DYNAMIC_STORAGE_BIT);
+    glNamedBufferStorage(_buffer_handle.get(), _buffer_size * sizeof(glm::vec4), data.data(), GL_DYNAMIC_STORAGE_BIT);
     const ImageFormatGL gl_format = image_format_to_gl(_format);
     glTextureBuffer(_handle.get(), gl_format.internal_format, _buffer_handle.get());
 }

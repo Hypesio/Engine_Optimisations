@@ -62,5 +62,5 @@ vec3 unpack_normal_map(vec2 normal) {
 
 uint float_to_uint(float value)
 {
-    return uint(value * 256);
+    return uint(value * 1024);
 }

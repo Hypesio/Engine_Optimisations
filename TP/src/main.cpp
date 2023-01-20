@@ -235,6 +235,7 @@ int main(int, char**) {
 
             // Forward rendering of transparent objects
             Texture oit_head_list(window_size, ImageFormat::R32_UINT, 0);
+            g_depth.bind(2);
             scene_view.render_transparent(oit_head_list, ll_buffer);
 
             /*uint *buf = (uint *) malloc(window_size.x * window_size.y * 5 * sizeof(uint) * 4);
