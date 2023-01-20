@@ -172,10 +172,10 @@ namespace OM3D
 
         for (size_t i = 0; i < _point_lights.size(); i++)
         {
-            // TODO compute only on point lights in the frustum
             const auto &pos = _point_lights[i].position();
             const auto &radius = _point_lights[i].radius();
 
+            // Compute only on point lights in the frustum
             BoundingSphere bounds = {pos, radius};
             if (!bounds.is_visible(camera, frustum))
                 continue;
@@ -210,6 +210,87 @@ namespace OM3D
 
             sphere_mesh->draw();
         }
+    }
+
+    void Scene::tiled_render(const Camera &camera, glm::uvec2 window_size, size_t tile_size) const {
+
+        Frustum frustum = camera.build_frustum();
+
+        std::vector<uint> plights_indices;
+        std::vector<uint> indices;
+        uint counter = 0;
+
+        for (size_t i = 0; i < window_size.x; i += tile_size)
+        {
+            // TODO really calculate the normals
+            glm::vec3 top_normal = frustum._top_normal;
+            glm::vec3 bottom_normal = frustum._bottom_normal;
+
+            for (size_t j = 0; j < window_size.y; j += tile_size)
+            {
+                glm::vec3 right_normal = frustum._right_normal;
+                glm::vec3 left_normal = frustum._left_normal;
+
+                Frustum act_frustum = { 
+                    frustum._near_normal, // Stays the same
+                    top_normal, 
+                    bottom_normal, 
+                    right_normal, 
+                    left_normal
+                };
+                
+                for (size_t i = 0; i < _point_lights.size(); i++)
+                {
+                    const auto &pos = _point_lights[i].position();
+                    const auto &radius = _point_lights[i].radius();
+
+                    // Find the lights that alter the tile
+                    BoundingSphere bounds = {pos, radius};
+                    if (bounds.is_visible(camera, act_frustum)) {
+                        plights_indices.push_back(i);
+                        counter++;
+                    }
+                }
+
+                indices.push_back(counter);
+            }
+        }
+
+        // Bind everything for the compute
+
+        // Fill and bind frame models buffer
+        TypedBuffer<shader::FrameData> buffer(nullptr, 1);
+        {
+            auto mapping = buffer.map(AccessType::WriteOnly);
+            mapping[0].camera.view_proj = camera.view_proj_matrix();
+            mapping[0].point_light_count = u32(_point_lights.size());
+            mapping[0].sun_color = glm::vec3(1.0f, 1.0f, 1.0f);
+            mapping[0].sun_dir = glm::normalize(_sun_direction);
+        }
+        buffer.bind(BufferUsage::Uniform, 0);
+
+        // Fill and bind lights buffer
+        TypedBuffer<shader::PointLight> light_buffer(nullptr, std::max(_point_lights.size(), size_t(1)));
+        {
+            auto mapping = light_buffer.map(AccessType::WriteOnly);
+            for (size_t i = 0; i != _point_lights.size(); ++i)
+            {
+                const auto &light = _point_lights[i];
+                mapping[i] = {
+                    light.position(),
+                    light.radius(),
+                    light.color(),
+                    0.0f};
+            }
+        }
+        light_buffer.bind(BufferUsage::Storage, 1);
+
+        TypedBuffer<uint> indices_buffer(indices.data(), indices.size());
+        indices_buffer.bind(BufferUsage::Storage, 2);
+        TypedBuffer<uint> plights_indices_buffer(plights_indices.data(), plights_indices.size());
+        plights_indices_buffer.bind(BufferUsage::Storage, 3);
+
+        glDispatchCompute(align_up_to(window_size.x, 8) / 8, align_up_to(window_size.y, 8) / 8, 1);
     }
 
     void add_object_in_group(std::vector<std::vector<size_t>> &groups, std::vector<SceneObject> &objects, const SceneObject &obj, const int i)
