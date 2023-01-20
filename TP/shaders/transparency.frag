@@ -21,7 +21,7 @@ layout(offset = 0, binding = 0) uniform atomic_uint counter;
 layout(binding = 0) uniform sampler2D in_texture;
 layout(binding = 1) uniform sampler2D in_normal_texture;
 
-layout(r32ui, binding = 0) uniform uimage2D head_texture;
+layout(r32ui, binding = 1) uniform uimage2D head_texture;
 layout(rgba32ui, binding = 0) uniform uimageBuffer data_list;
 
 layout(binding = 0) uniform Data {

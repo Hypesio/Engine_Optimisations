@@ -48,7 +48,7 @@ static GLuint create_texture_buffer_handle() {
 
 static GLuint create_buffer_handle() {
     GLuint handle = 0;
-    glGenBuffers(1, &handle);
+    glCreateBuffers(1, &handle);
     return handle;
 }
 
@@ -89,16 +89,18 @@ Texture::Texture(const size_t buffer_size, ImageFormat format) :
     _buffer_handle(create_buffer_handle()),
     _format(format) {
 
-    glBindBuffer(GL_TEXTURE_BUFFER, _buffer_handle.get());
     std::vector<glm::vec4> data(_buffer_size, glm::vec4(0.0, 0.0, 0.0, 0.0));
-    glBufferData(GL_TEXTURE_BUFFER, _buffer_size, data.data(), GL_DYNAMIC_DRAW);
+    glNamedBufferStorage(_buffer_handle.get(), _buffer_size, data.data(), GL_DYNAMIC_STORAGE_BIT);
     const ImageFormatGL gl_format = image_format_to_gl(_format);
-    glTexBuffer(GL_TEXTURE_BUFFER, gl_format.internal_format, _buffer_handle.get());
+    glTextureBuffer(_handle.get(), gl_format.internal_format, _buffer_handle.get());
 }
 
 Texture::~Texture() {
     if(auto handle = _handle.get()) {
         glDeleteTextures(1, &handle);
+    }
+    if(auto handle = _buffer_handle.get()) {
+        glDeleteBuffers(1, &handle);
     }
 }
 
@@ -110,12 +112,17 @@ void Texture::bind_as_image(u32 index, AccessType access) {
     glBindImageTexture(index, _handle.get(), 0, false, 0, access_type_to_gl(access), image_format_to_gl(_format).internal_format);
 }
 
-void Texture::bind_as_buffer() const {
-    glBindTexture(GL_TEXTURE_BUFFER, _handle.get());
+void Texture::bind_as_buffer(u32 index) const {
+    //glBindTexture(GL_TEXTURE_BUFFER, _handle.get());
+    glBindImageTexture(index, _handle.get(), 0, GL_FALSE, 0, GL_READ_WRITE, image_format_to_gl(_format).internal_format);
 }
 
 const glm::uvec2& Texture::size() const {
     return _size;
+}
+
+const GLHandle& Texture::handle() const{
+    return _handle;
 }
 
 // Return number of mip levels needed

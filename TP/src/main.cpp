@@ -237,21 +237,23 @@ int main(int, char**) {
             Texture oit_head_list(window_size, ImageFormat::R32_UINT, 0);
             scene_view.render_transparent(oit_head_list, ll_buffer);
 
-            /*GLuint buffer; // handle to buffer
-            std::vector<shader::PixelNode> storage(10); // n is the size  
-            glGetNamedBufferSubData(linked_list_buffer.handle().get(), 0, 10 * sizeof(float), storage.data());
+            /*uint *buf = (uint *) malloc(window_size.x * window_size.y * 5 * sizeof(uint) * 4);
+            glGetTexImage(GL_TEXTURE_BUFFER, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+            //GLuint buffer; // handle to buffer
+            //std::vector<glm::vec4> storage(10); // n is the size  
+            //glGetNamedBufferSubData(linked_list_buffer.handle().get(), 0, 10 * sizeof(float), storage.data());
             //auto mapping = linked_list_buffer.map(AccessType::ReadOnly);
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 10; i += 4)
             {
-                std::cout << storage[i].color.x << "," << storage[i].color.y << "," << storage[i].color.z << "," << storage[i].color.w << std::endl;
+                std::cout << buf[i] << "," << buf[i+1] << "," << buf[i+2] << "," << buf[i+3] << std::endl;
             }*/
 
             // Compute to sort pixels values
             oit_compute_program->bind(); 
             lit.bind(0); // Bind actual result 
             oit_head_list.bind_as_image(0, AccessType::ReadOnly); 
-            transparent.bind_as_image(1, AccessType::WriteOnly); // Will write result on color image
-            ll_buffer.bind_as_buffer();
+            transparent.bind_as_image(2, AccessType::WriteOnly); // Will write result on color image
+            ll_buffer.bind_as_buffer(0);
             glDispatchCompute(align_up_to(window_size.x, 8), align_up_to(window_size.y, 8), 1);
         }
 

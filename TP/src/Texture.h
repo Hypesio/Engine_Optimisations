@@ -36,9 +36,11 @@ class Texture {
 
         void bind(u32 index) const;
         void bind_as_image(u32 index, AccessType access);
-        void bind_as_buffer() const;
+        void bind_as_buffer(u32 index) const;
 
         const glm::uvec2& size() const;
+
+        const GLHandle &handle() const;
 
         static u32 mip_levels(glm::uvec2 size);
 

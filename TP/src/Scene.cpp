@@ -139,10 +139,10 @@ namespace OM3D
         camera_pos.bind(BufferUsage::Uniform, 1);
 
         // Bind image2D HeadTexture;
-        head_list.bind_as_image(0, AccessType::ReadWrite);
+        head_list.bind_as_image(1, AccessType::ReadWrite);
 
         // Bind SSBO - ListNodes
-        ll_buffer.bind_as_buffer();
+        ll_buffer.bind_as_buffer(0);
 
         uint counter = 0;
         GLuint atomicsBuffer;

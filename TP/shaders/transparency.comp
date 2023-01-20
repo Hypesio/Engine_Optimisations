@@ -6,8 +6,8 @@ layout(local_size_x = 8, local_size_y = 8) in;
 #define max_layers 14
 
 layout(binding = 0) uniform sampler2D in_color;
-layout(r32ui, binding = 0) uniform readonly uimage2D head_texture;
-layout(binding = 1) uniform writeonly image2D out_image;
+layout(r32ui, binding = 1) uniform uimage2D head_texture;
+layout(binding = 2) uniform writeonly image2D out_image;
 layout(rgba32ui, binding = 0) uniform uimageBuffer data_list;
 
 void order_list(uvec4 list[max_layers], uint size)
@@ -53,6 +53,9 @@ void main()
     // Get the tail of the list
     ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
     uint idx = imageLoad(head_texture, coord).x;
+    //vec4 color = vec4(idx, idx, idx, 1.0);
+    //imageStore(out_image, coord, color);
+    //return;
 
     if (idx > 0) // No transparency element on this pixel
     {
@@ -80,13 +83,13 @@ void main()
         }*/
 
         // Blend all values
-        //uvec4 node_infos = full_list[0];
+        //uvec4 node_infos = full_list[1];
         //vec4 node_color = vec4(unpackHalf2x16(node_infos.x), unpackHalf2x16(node_infos.y));
         //if (node_color.x == 0)
         //    node_color = vec4(1.0, 1.0, 1.0, 1.0);
         vec4 color = texelFetch(in_color, coord, 0);// + node_color;
         uint id = 0;
-        while (id < 2)
+        while (id < size)
         {
             // Simple additive blending -- Should be alpha blending for better result
             uvec4 node_infos = full_list[id++];
