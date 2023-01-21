@@ -10,47 +10,11 @@ layout(r32ui, binding = 1) uniform uimage2D head_texture;
 layout(binding = 2) uniform writeonly image2D out_image;
 layout(rgba32ui, binding = 0) uniform uimageBuffer data_list;
 
-void order_list(uvec4 list[max_layers], uint size)
+vec4 blend(vec4 src, vec4 over)
 {
-    // Simple bubble sort for the moment
-    uint i, j;
-    for (i = 0; i < size - 1; i++)
-    {
-        // Last i elements are already
-        // in place
-        for (j = 0; j < size - i - 1; j++) 
-        {
-            if (list[j].z < list[j + 1].z)
-            {
-                uvec4 tmp = list[j]; 
-                list[j] = list[j + 1]; 
-                list[j + 1] = tmp;
-            }
-        }
-    }
-}
-
-void insertion_sort(uvec4 list[max_layers], uint size, uvec4 element)
-{
-    for (uint i = 0; i < size; i++)
-    {
-        if (list[i].z < element.z)
-        {
-            uvec4 prev = list[i];
-            list[i] = element;
-            for (uint j = i + 1; j < size; j++)
-            {
-                uvec4 tmp = list[j];
-                list[j] = prev; 
-                prev = tmp;
-            }
-        }
-    }
-}
-
-vec4 blend(vec4 src, vec4 target, float alpha)
-{
-    return src * alpha + target * (1.0-alpha);
+    float alpha = src.a + over.a * (1.0 - src.a); 
+    vec3 color = (src.rgb * src.a + over.rgb * over.a * (1.0 - src.a)) / alpha; 
+    return vec4(color, alpha);
 }
 
 void main()
@@ -58,9 +22,6 @@ void main()
     // Get the tail of the list
     ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
     uint idx = imageLoad(head_texture, coord).x;
-    //vec4 color = vec4(idx, idx, idx, 1.0);
-    //imageStore(out_image, coord, color);
-    //return;
 
     if (idx > 0) // No transparency element on this pixel
     {
@@ -77,13 +38,38 @@ void main()
         uint size = list_id;
 
         // Sort the list
-        order_list(full_list, size);
+        for (uint i = 0; i < size - 1; i++)
+        {
+            for (uint j = 0; j < size - i - 1; j++) 
+            {
+                if (full_list[j].z < full_list[j + 1].z)
+                {
+                    uvec4 tmp = full_list[j]; 
+                    full_list[j] = full_list[j + 1]; 
+                    full_list[j + 1] = tmp;
+                }
+            }
+        }
 
         // Insertion sort all the remaining elements in list
         while(idx > 0)
         {
             uvec4 to_add = imageLoad(data_list, int(idx));
-            insertion_sort(full_list, max_layers, to_add);
+
+            for (uint i = 0; i < size; i++)
+            {
+                if (full_list[i].z < to_add.z)
+                {
+                    uvec4 prev = full_list[i];
+                    full_list[i] = to_add;
+                    for (uint j = i + 1; j < size; j++)
+                    {
+                        uvec4 tmp = full_list[j];
+                        full_list[j] = prev; 
+                        prev = tmp;
+                    }
+                }
+            }
             idx = int(to_add.w);
         }
 
@@ -92,10 +78,9 @@ void main()
         uint id = 0;
         while (id < size)
         {
-            // Simple additive blending -- Should be alpha blending for better result
             uvec4 node_infos = full_list[id++];
             vec4 node_color = vec4(unpackHalf2x16(node_infos.x), unpackHalf2x16(node_infos.y));
-            color = blend(color, node_color, 0.5);
+            color = blend(node_color, color);
         }
 
         imageStore(out_image, coord, color);
@@ -106,5 +91,4 @@ void main()
         imageStore(out_image, coord, color);
     }
 
-    
 }

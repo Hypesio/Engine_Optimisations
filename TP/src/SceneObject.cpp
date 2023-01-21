@@ -23,7 +23,7 @@ namespace OM3D
 
     
 
-    void SceneObject::render(Camera camera, Frustum frustum) const
+    void SceneObject::render(Camera camera, Frustum frustum, bool front_and_back) const
     {
         if (!_material || !_mesh)
         {
@@ -33,9 +33,22 @@ namespace OM3D
         TypedBuffer<glm::mat4> model_buffer(&transform(), 1);
         model_buffer.bind(BufferUsage::Storage, 2);
         
-        _material->bind();
-        if (this->is_visible(camera, frustum))
-            _mesh->draw();
+        
+        if (this->is_visible(camera, frustum)) 
+        {
+            if (front_and_back)
+            {
+                _material->bind(CullMode::Frontface);
+                _mesh->draw(); 
+                _material->bind(CullMode::Backface);
+                _mesh->draw();
+            }
+            else 
+            {
+                _material->bind();
+                _mesh->draw();
+            }
+        }
     }
 
     void SceneObject::set_transform(const glm::mat4 &tr)

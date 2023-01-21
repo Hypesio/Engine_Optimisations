@@ -59,7 +59,7 @@ void main() {
         const vec3 light_vec = to_light / dist;
 
         const float NoL = dot(light_vec, normal);
-        const float att = attenuation(dist, light.radius);
+        const float att = attenuation(dist, light.radius) * light.intensity;
         if(NoL <= 0.0 || att <= 0.0f) {
             continue;
         }
@@ -78,7 +78,7 @@ void main() {
 #endif
 
     // TODO Remove - Force transparency of object
-    out_color[3] = 0.8;
+    out_color[3] = 0.8f;
 
     int idx = int(atomicCounterIncrement(counter) + 1u);
 

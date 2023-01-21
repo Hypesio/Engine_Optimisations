@@ -67,7 +67,7 @@ namespace OM3D
                     light.position(),
                     light.radius(),
                     light.color(),
-                    0.0f};
+                    light.intensity()};
             }
         }
         light_buffer.bind(BufferUsage::Storage, 1);
@@ -128,7 +128,7 @@ namespace OM3D
                     light.position(),
                     light.radius(),
                     light.color(),
-                    0.0f};
+                    light.intensity()};
             }
         }
         light_buffer.bind(BufferUsage::Storage, 1);
@@ -152,7 +152,7 @@ namespace OM3D
         {
             for (const size_t &obj_index : instanceList)
             {
-                _objects[obj_index].render(camera, frustum);
+                _objects[obj_index].render(camera, frustum, false);
             }
         }
     }
@@ -188,7 +188,7 @@ namespace OM3D
                     pos,
                     radius,
                     _point_lights[i].color(),
-                    0.0f};
+                    _point_lights[i].intensity()};
             }
             light_buffer.bind(BufferUsage::Uniform, 1);
 
@@ -257,14 +257,14 @@ namespace OM3D
         return _objects[obj_index].get_mesh();
     }
 
-    void Scene::force_transparency(std::shared_ptr<Program> prog)
+    void Scene::force_transparency(std::shared_ptr<Program> prog, int group_index)
     {
-        for (size_t i = 0; i < _instanceGroups[1].size(); i++)
+        for (size_t i = 0; i < _instanceGroups[group_index].size(); i++)
         {
-            _objects[_instanceGroups[1][i]].get_material()->set_blend_mode(BlendMode::Alpha);
-            _objects[_instanceGroups[1][i]].get_material()->set_depth_mask(GL_FALSE);
-            _objects[_instanceGroups[1][i]].get_material()->set_depth_test_mode(DepthTestMode::Reversed);
-            _objects[_instanceGroups[1][i]].get_material()->set_program(prog);
+            _objects[_instanceGroups[group_index][i]].get_material()->set_blend_mode(BlendMode::Alpha);
+            _objects[_instanceGroups[group_index][i]].get_material()->set_depth_mask(GL_FALSE);
+            _objects[_instanceGroups[group_index][i]].get_material()->set_depth_test_mode(DepthTestMode::Reversed);
+            _objects[_instanceGroups[group_index][i]].get_material()->set_program(prog);
         }
         this->order_objects_in_lists();
     }
