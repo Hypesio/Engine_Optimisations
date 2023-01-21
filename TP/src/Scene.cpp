@@ -263,6 +263,7 @@ namespace OM3D
         {
             auto mapping = buffer.map(AccessType::WriteOnly);
             mapping[0].camera.view_proj = camera.view_proj_matrix();
+            mapping[0].camera.inv_view_proj = glm::inverse(camera.view_proj_matrix());
             mapping[0].point_light_count = u32(_point_lights.size());
             mapping[0].sun_color = glm::vec3(1.0f, 1.0f, 1.0f);
             mapping[0].sun_dir = glm::normalize(_sun_direction);
@@ -285,9 +286,19 @@ namespace OM3D
         }
         light_buffer.bind(BufferUsage::Storage, 1);
 
-        TypedBuffer<uint> indices_buffer(indices.data(), indices.size());
+        TypedBuffer<uint> indices_buffer(nullptr, std::max(indices.size(), size_t(1)));
+        {
+            auto mapping = indices_buffer.map(AccessType::WriteOnly);
+            for (size_t i = 0; i != indices.size(); ++i)
+                mapping[i] = indices[i];
+        }
         indices_buffer.bind(BufferUsage::Storage, 2);
-        TypedBuffer<uint> plights_indices_buffer(plights_indices.data(), plights_indices.size());
+        TypedBuffer<uint> plights_indices_buffer(nullptr, std::max(plights_indices.size(), size_t(1)));
+        {
+            auto mapping = plights_indices_buffer.map(AccessType::WriteOnly);
+            for (size_t i = 0; i != plights_indices.size(); ++i)
+                mapping[i] = plights_indices[i];
+        }
         plights_indices_buffer.bind(BufferUsage::Storage, 3);
 
         glDispatchCompute(align_up_to(window_size.x, 8) / 8, align_up_to(window_size.y, 8) / 8, 1);

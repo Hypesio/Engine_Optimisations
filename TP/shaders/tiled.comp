@@ -17,15 +17,15 @@ layout(binding = 0) uniform Data {
     FrameData frame;
 };
 
-layout(binding = 1) buffer PLightData {
+layout(std430, binding = 1) buffer PLightData {
     PointLight point_lights[];
 };
 
-layout(binding = 2) buffer TileData {
+layout(std430, binding = 2) buffer TileData {
     uint tile_indices[];
 };
 
-layout(binding = 3) buffer TileIndexData {
+layout(std430, binding = 3) buffer TileIndexData {
     uint plights_indices[];
 };
 
@@ -46,7 +46,7 @@ void main() {
     if (depth > 0.0) {
 
         uvec2 tile_index = coord / tile_size;
-        uint tile_i = tile_index.x * (int(window_size.x) / tile_size) + tile_index.y;
+        uint tile_i = tile_index.y * (int(window_size.x) / tile_size) + tile_index.x;
 
         uint last_plight = tile_indices[tile_i];
         uint first_plight = 0;
@@ -72,5 +72,8 @@ void main() {
         vec4 lit = vec4(in_color + (albedo * acc), 1.0);
 
         imageStore(image, coord, lit);
+
+        /*if (plights_indices[1] == 1)
+            imageStore(image, coord, vec4(1.0));*/
     }
 }
