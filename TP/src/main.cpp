@@ -97,7 +97,7 @@ std::unique_ptr<Scene> create_default_scene() {
         PointLight light;
         light.set_position(glm::vec3(1.0f, 2.0f, 100.0f));
         light.set_color(glm::vec3(255.0f, 255.0f, 255.0f));
-        light.set_radius(100.0f);
+        light.set_radius(300.0f);
         scene->add_object(std::move(light));
     }
     {
@@ -176,7 +176,7 @@ int main(int, char**) {
     Framebuffer tonemap_framebuffer(nullptr, std::array{&color});
 
     Texture g_depth(window_size, ImageFormat::Depth32_FLOAT);
-    Texture albedo(window_size, ImageFormat::RGBA8_sRGB);
+    Texture albedo(window_size, ImageFormat::RGBA8_UNORM);
     Texture normals(window_size, ImageFormat::RGBA8_UNORM);
     Framebuffer g_buffer(&g_depth, std::array{&albedo, &normals});
     Framebuffer main_framebuffer(&g_depth, std::array{&lit});
@@ -227,7 +227,7 @@ int main(int, char**) {
             normals.bind(1);
             g_depth.bind(2);
 
-            uint tile_size = 50;
+            uint tile_size = 10;
             tiled_program->set_uniform("tile_size", tile_size);
             tiled_program->set_uniform("window_size", window_size);
 

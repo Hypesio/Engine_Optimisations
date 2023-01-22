@@ -19,3 +19,10 @@ struct PointLight {
     vec3 color;
     float padding_1;
 };
+
+struct AdvancedCameraData {
+    vec3 position; 
+    vec3 forward;
+    vec3 up; 
+    vec3 right;
+};

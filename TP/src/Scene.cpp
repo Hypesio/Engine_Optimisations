@@ -214,40 +214,63 @@ namespace OM3D
 
     void Scene::tiled_render(const Camera &camera, glm::uvec2 window_size, size_t tile_size) const {
 
-        Frustum frustum = camera.build_frustum();
+        glm::vec3 camera_forward = camera.forward();
+        glm::vec3 camera_up = camera.up();
+        glm::vec3 camera_right = camera.right();
+
+        float fov_y = camera.fov();
+        float fov_x = std::atan(std::tan(fov_y) * camera.aspect_ratio());
+
+        float n_x_tiles = window_size.x / tile_size;
+        float n_y_tiles = window_size.y / tile_size;
 
         std::vector<uint> plights_indices;
         std::vector<uint> indices;
         uint counter = 0;
 
-        for (size_t i = 0; i < window_size.x; i += tile_size)
+        for (size_t i = 0; i < window_size.y; i += tile_size)
         {
-            // TODO really calculate the normals
-            glm::vec3 top_normal = frustum._top_normal;
-            glm::vec3 bottom_normal = frustum._bottom_normal;
+            float top_fov = (fov_y * 0.5f) * -(1.0f - (((float(i) / float(tile_size) + 1.0f) * 2.0f) / n_y_tiles));  
+            float bottom_fov = (fov_y * 0.5f) * (1.0f - ((float(i) / float(tile_size) * 2.0f) / n_y_tiles));
+            
+            glm::vec3 top_normal = camera_forward * std::sin(top_fov) - camera_up * std::cos(top_fov);
+            glm::vec3 bottom_normal = camera_forward * std::sin(bottom_fov) + camera_up * std::cos(bottom_fov);
 
-            for (size_t j = 0; j < window_size.y; j += tile_size)
+            for (size_t j = 0; j < window_size.x; j += tile_size)
             {
-                glm::vec3 right_normal = frustum._right_normal;
-                glm::vec3 left_normal = frustum._left_normal;
+                float left_fov = (fov_x * 0.5f) * (1.0f - ((float(j) / float(tile_size) * 2.0f) / n_x_tiles));
+                //std::cout << "ref: " << (fov_x * 0.5f) << "; get: " << left_fov << "; j: " << j << std::endl;
+                float right_fov = (fov_x * 0.5f) * -(1.0f - (((float(j) / float(tile_size) + 1.0f) * 2.0f) / n_x_tiles));
 
-                Frustum act_frustum = { 
-                    frustum._near_normal, // Stays the same
+                glm::vec3 left_normal = camera_forward * std::sin(left_fov) + camera_right * std::cos(left_fov);
+                glm::vec3 right_normal = camera_forward * std::sin(right_fov) - camera_right * std::cos(right_fov);
+                //std::cout << "right: " << right_normal.x << ", " << right_normal.y << ", " << right_normal.z << std::endl;
+
+                Frustum frustum = { 
+                    camera_forward, // Stays the same
                     top_normal, 
                     bottom_normal, 
                     right_normal, 
                     left_normal
                 };
+
+                /*if (i == 0 && j == 0) {
+                    std::cout << "top : " << frustum._top_normal.x << "," << frustum._top_normal.y << "," << frustum._top_normal.z << std::endl
+                              << "bottom : " << frustum._bottom_normal.x << "," << frustum._bottom_normal.y << "," << frustum._bottom_normal.z << std::endl
+                              << "left : " << frustum._left_normal.x << "," << frustum._left_normal.y << "," << frustum._left_normal.z << std::endl
+                              << "right : " << frustum._right_normal.x << "," << frustum._right_normal.y << "," << frustum._right_normal.z << std::endl
+                              << std::endl;
+                }*/
                 
-                for (size_t i = 0; i < _point_lights.size(); i++)
+                for (size_t l = 0; l < _point_lights.size(); l++)
                 {
-                    const auto &pos = _point_lights[i].position();
-                    const auto &radius = _point_lights[i].radius();
+                    const auto &pos = _point_lights[l].position();
+                    const auto &radius = _point_lights[l].radius();
 
                     // Find the lights that alter the tile
                     BoundingSphere bounds = {pos, radius};
-                    if (bounds.is_visible(camera, act_frustum)) {
-                        plights_indices.push_back(i);
+                    if (bounds.is_visible(camera, frustum)) {
+                        plights_indices.push_back(l);
                         counter++;
                     }
                 }
