@@ -181,7 +181,6 @@ int main(int, char**) {
     Framebuffer g_buffer(&g_depth, std::array{&albedo, &normals});
     Framebuffer main_framebuffer(&g_depth, std::array{&lit});
 
-    //TypedBuffer<glm::vec4> linked_list_buffer(nullptr, window_size.x * window_size.y * 5);
     Texture ll_buffer(window_size.x * window_size.y * 5, ImageFormat::RGBA_32UI);
     
     int nb_buffers = 2;
@@ -217,8 +216,6 @@ int main(int, char**) {
             scene_view.deferred_render();
 
             // Compute deferred contribution of each visible point lights
-            //plight_mat.bind();
-
             tiled_program->bind();
 
             lit.bind_as_image(0, AccessType::ReadWrite);
@@ -230,10 +227,6 @@ int main(int, char**) {
             uint tile_size = 10;
             tiled_program->set_uniform("tile_size", tile_size);
             tiled_program->set_uniform("window_size", window_size);
-
-            //std::shared_ptr<StaticMesh> sphere_mesh = sphere_scene.get()->get_mesh(0);
-            //scene_view.point_lights_render(sphere_mesh);
-
             scene_view.tiled_render(window_size, tile_size);
         }
         

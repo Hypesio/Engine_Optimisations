@@ -25,4 +25,7 @@ struct AdvancedCameraData {
     vec3 forward;
     vec3 up; 
     vec3 right;
+    float half_fov; 
+    vec2 window_size; 
+    float tile_size;
 };

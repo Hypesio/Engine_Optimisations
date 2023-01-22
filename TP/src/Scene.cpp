@@ -239,12 +239,10 @@ namespace OM3D
             for (size_t j = 0; j < window_size.x; j += tile_size)
             {
                 float left_fov = (fov_x * 0.5f) * (1.0f - ((float(j) / float(tile_size) * 2.0f) / n_x_tiles));
-                //std::cout << "ref: " << (fov_x * 0.5f) << "; get: " << left_fov << "; j: " << j << std::endl;
                 float right_fov = (fov_x * 0.5f) * -(1.0f - (((float(j) / float(tile_size) + 1.0f) * 2.0f) / n_x_tiles));
 
                 glm::vec3 left_normal = camera_forward * std::sin(left_fov) + camera_right * std::cos(left_fov);
                 glm::vec3 right_normal = camera_forward * std::sin(right_fov) - camera_right * std::cos(right_fov);
-                //std::cout << "right: " << right_normal.x << ", " << right_normal.y << ", " << right_normal.z << std::endl;
 
                 Frustum frustum = { 
                     camera_forward, // Stays the same
@@ -254,14 +252,6 @@ namespace OM3D
                     left_normal
                 };
 
-                /*if (i == 0 && j == 0) {
-                    std::cout << "top : " << frustum._top_normal.x << "," << frustum._top_normal.y << "," << frustum._top_normal.z << std::endl
-                              << "bottom : " << frustum._bottom_normal.x << "," << frustum._bottom_normal.y << "," << frustum._bottom_normal.z << std::endl
-                              << "left : " << frustum._left_normal.x << "," << frustum._left_normal.y << "," << frustum._left_normal.z << std::endl
-                              << "right : " << frustum._right_normal.x << "," << frustum._right_normal.y << "," << frustum._right_normal.z << std::endl
-                              << std::endl;
-                }*/
-                
                 for (size_t l = 0; l < _point_lights.size(); l++)
                 {
                     const auto &pos = _point_lights[l].position();
