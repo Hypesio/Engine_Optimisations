@@ -1,11 +1,16 @@
 # OM3D
-EPITA course for 5th year students
+Made by Melvin Gidel and Antoine Aubin
 
-Slides: https://docs.google.com/presentation/d/1qJhH0cmEMVQRhF37UOYDdw0ZKtd00_oQXW1dZrUbSL4/edit
+Training project about 3D engine optimisation. 
+It features : 
+- OIT using linked list 
+- Simple tiles deferred rendering
 
-TP1: https://hackmd.io/@G2s9zdzlSd-RfTlBoN_x2A/ryY2BSgVo
+## Order Independant Transparency using Linked List
+Based on this presentation made by Christoph Kubisch : [Order Independent Transparency Opengl](https://on-demand.gputechconf.com/gtc/2014/presentations/S4385-order-independent-transparency-opengl.pdf)
 
-TP2&3: https://hackmd.io/@G2s9zdzlSd-RfTlBoN_x2A/Bkm_EOFHo
+https://user-images.githubusercontent.com/47392735/213946728-e670a655-2e84-4005-9780-788856efffee.mp4
+
 
 
 ### How to build
@@ -18,7 +23,4 @@ cmake ../..
 make
 ```
 
-### Contact
-If you have a problem, please send a mail to
-- alexandre.lamure@epita.fr
-- gregoire.angerand@gmail.com
+_This project is part of an EPITA course made by Alexandre Lamure and Gregoire Angerrand._
