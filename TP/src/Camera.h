@@ -28,6 +28,8 @@ class Camera {
         glm::vec3 forward() const;
         glm::vec3 right() const;
         glm::vec3 up() const;
+        float fov() const;
+        float aspect_ratio() const;
 
         const glm::mat4& projection_matrix() const;
         const glm::mat4& view_matrix() const;

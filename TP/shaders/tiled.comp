@@ -1,0 +1,94 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+#include "utils.glsl"
+
+uniform uint tile_size;
+uniform vec2 window_size;
+
+layout(rgba16f, binding = 0) uniform image2D image;
+
+layout(binding = 0) uniform sampler2D in_albedo;
+layout(binding = 1) uniform sampler2D in_normal;
+layout(binding = 2) uniform sampler2D in_depth;
+
+layout(binding = 0) uniform Data {
+    FrameData frame;
+};
+
+layout(std430, binding = 1) buffer PLightData {
+    PointLight point_lights[];
+};
+
+layout(std430, binding = 2) buffer TileData {
+    uint tile_indices[];
+};
+
+layout(std430, binding = 3) buffer TileIndexData {
+    uint plights_indices[];
+};
+
+vec3 unproject(vec2 uv, float depth, mat4 inv_view_proj) {
+    const vec3 ndc = vec3(uv * 2.0 - vec2(1.0), depth);
+    const vec4 p = inv_view_proj * vec4(ndc, 1.0);
+    return p.xyz / p.w;
+}
+
+vec3 nb_lights[3] = { vec3(0,0,1), vec3(1,1,0), vec3(1,0,0) };
+
+void main() {
+    ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+    vec3 albedo = texelFetch(in_albedo, coord, 0).xyz;
+    vec3 normal = texelFetch(in_normal, coord, 0).xyz;
+    float depth = texelFetch(in_depth, coord, 0).x;
+
+    vec3 in_color = imageLoad(image, coord).xyz;
+
+//  TO REMOVE *************************
+    uvec2 tile_index = coord / tile_size;
+    uint tile_i = tile_index.y * (int(window_size.x) / tile_size) + tile_index.x;
+
+    uint last_plight = tile_indices[tile_i];
+    uint first_plight = 0;
+    if (tile_i > 0)
+        first_plight = tile_indices[tile_i - 1];
+
+    uint nb = last_plight - first_plight;
+    vec4 lit = vec4(in_color, 1.0);
+// ************************************
+
+    if (depth > 0.0) {
+
+        /*uvec2 tile_index = coord / tile_size;
+        uint tile_i = tile_index.y * (int(window_size.x) / tile_size) + tile_index.x;
+
+        uint last_plight = tile_indices[tile_i];
+        uint first_plight = 0;
+        if (tile_i > 0)
+            first_plight = tile_indices[tile_i - 1];*/
+
+        vec3 acc = vec3(0.0);
+        for (uint i = first_plight; i < last_plight; i++) {
+            PointLight plight = point_lights[plights_indices[i]];
+            vec3 position = unproject(coord / window_size, depth, frame.camera.inv_view_proj);
+
+            const vec3 to_light = (plight.position - position);
+            const float dist = length(to_light);
+
+            const vec3 light_vec = to_light / dist;
+
+            const float NoL = max(0.0, dot(light_vec, normal));
+            const float att = attenuation(dist, plight.radius, 0.1);
+
+            acc += plight.color * NoL * att;
+        }
+        
+        //vec4 lit = vec4(in_color + (albedo * acc), 1.0);
+        lit = vec4(in_color + (albedo * acc), 1.0);
+
+        imageStore(image, coord, lit);
+    }
+
+    //imageStore(image, coord, vec4(lit.xyz * 0.5 + nb_lights[nb] * 0.5, 1.0));
+}

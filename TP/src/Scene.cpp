@@ -172,10 +172,10 @@ namespace OM3D
 
         for (size_t i = 0; i < _point_lights.size(); i++)
         {
-            // TODO compute only on point lights in the frustum
             const auto &pos = _point_lights[i].position();
             const auto &radius = _point_lights[i].radius();
 
+            // Compute only on point lights in the frustum
             BoundingSphere bounds = {pos, radius};
             if (!bounds.is_visible(camera, frustum))
                 continue;
@@ -210,6 +210,111 @@ namespace OM3D
 
             sphere_mesh->draw();
         }
+    }
+
+    void Scene::tiled_render(const Camera &camera, glm::uvec2 window_size, size_t tile_size) const {
+
+        glm::vec3 camera_forward = camera.forward();
+        glm::vec3 camera_up = camera.up();
+        glm::vec3 camera_right = camera.right();
+
+        float fov_y = camera.fov();
+        float fov_x = std::atan(std::tan(fov_y) * camera.aspect_ratio());
+
+        float n_x_tiles = window_size.x / tile_size;
+        float n_y_tiles = window_size.y / tile_size;
+
+        std::vector<uint> plights_indices;
+        std::vector<uint> indices;
+        uint counter = 0;
+
+        for (size_t i = 0; i < window_size.y; i += tile_size)
+        {
+            float top_fov = (fov_y * 0.5f) * -(1.0f - (((float(i) / float(tile_size) + 1.0f) * 2.0f) / n_y_tiles));  
+            float bottom_fov = (fov_y * 0.5f) * (1.0f - ((float(i) / float(tile_size) * 2.0f) / n_y_tiles));
+            
+            glm::vec3 top_normal = camera_forward * std::sin(top_fov) - camera_up * std::cos(top_fov);
+            glm::vec3 bottom_normal = camera_forward * std::sin(bottom_fov) + camera_up * std::cos(bottom_fov);
+
+            for (size_t j = 0; j < window_size.x; j += tile_size)
+            {
+                float left_fov = (fov_x * 0.5f) * (1.0f - ((float(j) / float(tile_size) * 2.0f) / n_x_tiles));
+                float right_fov = (fov_x * 0.5f) * -(1.0f - (((float(j) / float(tile_size) + 1.0f) * 2.0f) / n_x_tiles));
+
+                glm::vec3 left_normal = camera_forward * std::sin(left_fov) + camera_right * std::cos(left_fov);
+                glm::vec3 right_normal = camera_forward * std::sin(right_fov) - camera_right * std::cos(right_fov);
+
+                Frustum frustum = { 
+                    camera_forward, // Stays the same
+                    top_normal, 
+                    bottom_normal, 
+                    right_normal, 
+                    left_normal
+                };
+
+                for (size_t l = 0; l < _point_lights.size(); l++)
+                {
+                    const auto &pos = _point_lights[l].position();
+                    const auto &radius = _point_lights[l].radius();
+
+                    // Find the lights that alter the tile
+                    BoundingSphere bounds = {pos, radius};
+                    if (bounds.is_visible(camera, frustum)) {
+                        plights_indices.push_back(l);
+                        counter++;
+                    }
+                }
+
+                indices.push_back(counter);
+            }
+        }
+
+        // Bind everything for the compute
+
+        // Fill and bind frame models buffer
+        TypedBuffer<shader::FrameData> buffer(nullptr, 1);
+        {
+            auto mapping = buffer.map(AccessType::WriteOnly);
+            mapping[0].camera.view_proj = camera.view_proj_matrix();
+            mapping[0].camera.inv_view_proj = glm::inverse(camera.view_proj_matrix());
+            mapping[0].point_light_count = u32(_point_lights.size());
+            mapping[0].sun_color = glm::vec3(1.0f, 1.0f, 1.0f);
+            mapping[0].sun_dir = glm::normalize(_sun_direction);
+        }
+        buffer.bind(BufferUsage::Uniform, 0);
+
+        // Fill and bind lights buffer
+        TypedBuffer<shader::PointLight> light_buffer(nullptr, std::max(_point_lights.size(), size_t(1)));
+        {
+            auto mapping = light_buffer.map(AccessType::WriteOnly);
+            for (size_t i = 0; i != _point_lights.size(); ++i)
+            {
+                const auto &light = _point_lights[i];
+                mapping[i] = {
+                    light.position(),
+                    light.radius(),
+                    light.color(),
+                    0.0f};
+            }
+        }
+        light_buffer.bind(BufferUsage::Storage, 1);
+
+        TypedBuffer<uint> indices_buffer(nullptr, std::max(indices.size(), size_t(1)));
+        {
+            auto mapping = indices_buffer.map(AccessType::WriteOnly);
+            for (size_t i = 0; i != indices.size(); ++i)
+                mapping[i] = indices[i];
+        }
+        indices_buffer.bind(BufferUsage::Storage, 2);
+        TypedBuffer<uint> plights_indices_buffer(nullptr, std::max(plights_indices.size(), size_t(1)));
+        {
+            auto mapping = plights_indices_buffer.map(AccessType::WriteOnly);
+            for (size_t i = 0; i != plights_indices.size(); ++i)
+                mapping[i] = plights_indices[i];
+        }
+        plights_indices_buffer.bind(BufferUsage::Storage, 3);
+
+        glDispatchCompute(align_up_to(window_size.x, 8) / 8, align_up_to(window_size.y, 8) / 8, 1);
     }
 
     void add_object_in_group(std::vector<std::vector<size_t>> &groups, std::vector<SceneObject> &objects, const SceneObject &obj, const int i)

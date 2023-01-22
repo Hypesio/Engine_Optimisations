@@ -26,10 +26,11 @@ namespace OM3D
         bool is_visible(Camera camera, Frustum frustum)
         {
             // Frustum culling
-            glm::vec3 dir = glm::vec3(glm::vec4(center_pos, 1.0)) - camera.position();
+            glm::vec3 dir = center_pos - camera.position();
+            glm::vec3 dir_near = center_pos - (camera.position() + camera.forward());
             float r = radius;
 
-            return glm::dot(dir, frustum._bottom_normal) > -r && glm::dot(dir, frustum._top_normal) > -r && glm::dot(dir, frustum._near_normal) > -r && glm::dot(dir, frustum._left_normal) > -r && glm::dot(dir, frustum._right_normal) > -r;
+            return glm::dot(dir, frustum._bottom_normal) > -r && glm::dot(dir, frustum._top_normal) > -r && glm::dot(dir_near, frustum._near_normal) > -r && glm::dot(dir, frustum._left_normal) > -r && glm::dot(dir, frustum._right_normal) > -r;
         }
     };
 

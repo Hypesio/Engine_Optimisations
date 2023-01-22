@@ -23,7 +23,8 @@ class Scene : NonMovable {
         void render_transparent(const Camera& camera, Texture &head_list, Texture &ll_buffer) const;
         void deferred_render(const Camera &camera) const;
         void point_lights_render(const Camera &camera, std::shared_ptr<StaticMesh> sphere_mesh) const;
-    
+        void tiled_render(const Camera &camera, glm::uvec2 window_size, size_t tile_size) const;
+
         void add_object(SceneObject obj);
         void add_object(PointLight obj);
         void order_objects_in_lists();

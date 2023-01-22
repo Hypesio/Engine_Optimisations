@@ -25,18 +25,22 @@ void SceneView::render_transparent(Texture &head_list, Texture &ll_buffer) const
     }
 }
 
-void SceneView::point_lights_render(std::shared_ptr<StaticMesh> sphere_mesh) const 
-{
-    if (_scene) 
-    {
-        _scene->point_lights_render(_camera, sphere_mesh);
-    }
-}
-
 void SceneView::deferred_render() const {
     if(_scene) {
         _scene->deferred_render(_camera);
     }
+}
+
+void SceneView::point_lights_render(std::shared_ptr<StaticMesh> sphere_mesh) const {
+    if (_scene) {
+        _scene->point_lights_render(_camera, sphere_mesh);
+    }
+}
+
+void SceneView::tiled_render(glm::uvec2 window_size, size_t tile_size) const {
+    if (_scene) {
+        _scene->tiled_render(_camera, window_size, tile_size);
+    }    
 }
 
 }

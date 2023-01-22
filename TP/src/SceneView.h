@@ -18,6 +18,7 @@ class SceneView {
         void render_transparent(Texture &head_list, Texture &ll_buffer) const;
         void deferred_render() const;
         void point_lights_render(std::shared_ptr<StaticMesh> sphere_mesh) const;
+        void tiled_render(glm::uvec2 window_size, size_t tile_size) const;
 
     private:
         const Scene* _scene = nullptr;

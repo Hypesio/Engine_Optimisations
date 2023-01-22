@@ -20,9 +20,12 @@ struct PointLight {
     float intensity;
 };
 
-struct PixelNode {
-    vec4 color;
-    float depth;
-    int prev;
-    vec2 padding_2;
+struct AdvancedCameraData {
+    vec3 position; 
+    vec3 forward;
+    vec3 up; 
+    vec3 right;
+    float half_fov; 
+    vec2 window_size; 
+    float tile_size;
 };

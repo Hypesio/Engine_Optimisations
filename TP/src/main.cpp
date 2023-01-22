@@ -153,6 +153,7 @@ int main(int, char**) {
     auto plight_program = Program::from_files("p_light.frag", "volume.vert");
     auto transparent_program = Program::from_files("transparency.frag", "transparency.vert", std::array<std::string, 2>{"TEXTURED", "NORMAL_MAPPED"});
     auto oit_compute_program = Program::from_file("transparency.comp");
+    auto tiled_program = Program::from_file("tiled.comp");
     // Add arbitrary transparency of some objects for testing purpose
     scene->force_transparency(transparent_program, 1);
 
@@ -177,12 +178,11 @@ int main(int, char**) {
     Framebuffer tonemap_framebuffer(nullptr, std::array{&color});
 
     Texture g_depth(window_size, ImageFormat::Depth32_FLOAT);
-    Texture albedo(window_size, ImageFormat::RGBA8_sRGB);
+    Texture albedo(window_size, ImageFormat::RGBA8_UNORM);
     Texture normals(window_size, ImageFormat::RGBA8_UNORM);
     Framebuffer g_buffer(&g_depth, std::array{&albedo, &normals});
     Framebuffer main_framebuffer(&g_depth, std::array{&lit});
 
-    //TypedBuffer<glm::vec4> linked_list_buffer(nullptr, window_size.x * window_size.y * 5);
     Texture ll_buffer(window_size.x * window_size.y * 5, ImageFormat::RGBA_32UI);
     
     int nb_buffers = 2;
@@ -218,38 +218,26 @@ int main(int, char**) {
             scene_view.deferred_render();
 
             // Compute deferred contribution of each visible point lights
-            plight_mat.bind();
+            tiled_program->bind();
+
+            lit.bind_as_image(0, AccessType::ReadWrite);
 
             albedo.bind(0);
             normals.bind(1);
             g_depth.bind(2);
 
-            plight_mat.set_uniform("window_size", window_size);
-
-            std::shared_ptr<StaticMesh> sphere_mesh = sphere_scene.get()->get_mesh(0);
-            scene_view.point_lights_render(sphere_mesh);
-
-            //auto mapping = linked_list_buffer.map(AccessType::ReadOnly);
-            /*for (int i = 0; i < 10; i++)
-            {
-                std::cout << mapping[i].color.x << "," << mapping[i].color.y << "," << mapping[i].color.z << "," << mapping[i].color.w << std::endl;
-            }*/
-
+            uint tile_size = 10;
+            tiled_program->set_uniform("tile_size", tile_size);
+            tiled_program->set_uniform("window_size", window_size);
+            scene_view.tiled_render(window_size, tile_size);
+        }
+        
+        // Render transparency
+        {
             // Forward rendering of transparent objects
             Texture oit_head_list(window_size, ImageFormat::R32_UINT, 0);
             g_depth.bind(2);
             scene_view.render_transparent(oit_head_list, ll_buffer);
-
-            /*uint *buf = (uint *) malloc(window_size.x * window_size.y * 5 * sizeof(uint) * 4);
-            glGetTexImage(GL_TEXTURE_BUFFER, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
-            //GLuint buffer; // handle to buffer
-            //std::vector<glm::vec4> storage(10); // n is the size  
-            //glGetNamedBufferSubData(linked_list_buffer.handle().get(), 0, 10 * sizeof(float), storage.data());
-            //auto mapping = linked_list_buffer.map(AccessType::ReadOnly);
-            for (int i = 0; i < 10; i += 4)
-            {
-                std::cout << buf[i] << "," << buf[i+1] << "," << buf[i+2] << "," << buf[i+3] << std::endl;
-            }*/
 
             // Compute to sort pixels values
             oit_compute_program->bind(); 
@@ -257,7 +245,7 @@ int main(int, char**) {
             oit_head_list.bind_as_image(0, AccessType::ReadOnly); 
             transparent.bind_as_image(2, AccessType::WriteOnly); // Will write result on color image
             ll_buffer.bind_as_buffer(0);
-            glDispatchCompute(align_up_to(window_size.x, 8), align_up_to(window_size.y, 8), 1);
+            glDispatchCompute(align_up_to(window_size.x, 8) / 8, align_up_to(window_size.y, 8) / 8, 1);
         }
 
         // Apply a tonemap in compute shader
@@ -271,7 +259,7 @@ int main(int, char**) {
                 transparent.bind(0);
 
             color.bind_as_image(1, AccessType::WriteOnly);
-            glDispatchCompute(align_up_to(window_size.x, 8), align_up_to(window_size.y, 8), 1);
+            glDispatchCompute(align_up_to(window_size.x, 8) / 8, align_up_to(window_size.y, 8) / 8, 1);
         }
         // Blit tonemap result to screen
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
