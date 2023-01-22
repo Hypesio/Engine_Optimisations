@@ -62,6 +62,14 @@ glm::vec3 Camera::up() const {
     return extract_up(_view);
 }
 
+float Camera::fov() const {
+    return _fov_y;
+}
+
+float Camera::aspect_ratio() const {
+    return _aspect_ratio;
+}
+
 const glm::mat4& Camera::projection_matrix() const {
     return _projection;
 }

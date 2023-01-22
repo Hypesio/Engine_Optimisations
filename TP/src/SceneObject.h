@@ -17,7 +17,7 @@ class SceneObject : NonCopyable {
     public:
         SceneObject(std::shared_ptr<StaticMesh> mesh = nullptr, std::shared_ptr<Material> material = nullptr);
 
-        void render(Camera camera, Frustum frustum) const;
+        void render(Camera camera, Frustum frustum, bool front_and_back = false) const;
 
         void set_transform(const glm::mat4& tr);
         const glm::mat4& transform() const;
@@ -25,6 +25,10 @@ class SceneObject : NonCopyable {
         
         const std::shared_ptr<Material> get_material() const {
             return _material;
+        } 
+
+        void set_material(const std::shared_ptr<Material> new_mat) {
+            _material = new_mat;
         } 
 
         const std::shared_ptr<StaticMesh> get_mesh() const {

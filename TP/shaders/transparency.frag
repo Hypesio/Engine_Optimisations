@@ -14,9 +14,20 @@ layout(location = 2) in vec3 in_color;
 layout(location = 3) in vec3 in_position;
 layout(location = 4) in vec3 in_tangent;
 layout(location = 5) in vec3 in_bitangent;
+layout(location = 6) in float depth; 
+
+layout(offset = 0, binding = 0) uniform atomic_uint counter;
 
 layout(binding = 0) uniform sampler2D in_texture;
 layout(binding = 1) uniform sampler2D in_normal_texture;
+layout(binding = 2) uniform sampler2D in_depth;
+
+layout(binding = 2) uniform StorageSize {
+    int maxSize; 
+};
+
+layout(r32ui, binding = 1) uniform uimage2D head_texture;
+layout(rgba32ui, binding = 0) uniform uimageBuffer data_list;
 
 layout(binding = 0) uniform Data {
     FrameData frame;
@@ -29,6 +40,11 @@ layout(binding = 1) buffer PointLights {
 const vec3 ambient = vec3(0.0);
 
 void main() {
+    ivec2 coord = ivec2(gl_FragCoord.xy);
+    float depth_z = texelFetch(in_depth, coord, 0).x;
+    if (gl_FragCoord.z <= depth_z)
+        discard;
+
 #ifdef NORMAL_MAPPED
     const vec3 normal_map = unpack_normal_map(texture(in_normal_texture, in_uv).xy);
     const vec3 normal = normal_map.x * in_tangent +
@@ -64,5 +80,20 @@ void main() {
 #ifdef DEBUG_NORMAL
     out_color = vec4(normal * 0.5 + 0.5, 1.0);
 #endif
+
+    // Here for test - Force transparency of object
+    out_color[3] = 0.4f;
+
+    int idx = int(atomicCounterIncrement(counter) + 1u);
+
+    if (idx < maxSize)
+    {
+        uint prev = imageAtomicExchange(head_texture, ivec2(gl_FragCoord.xy), idx);
+        uint color_rg = packHalf2x16(out_color.rg);
+        uint color_ba = packHalf2x16(out_color.ba);
+        imageStore(data_list, idx, uvec4(color_rg, color_ba, uint(depth), prev));
+    }
+
+    out_color = vec4(0.0);
 }
 

@@ -17,5 +17,15 @@ struct PointLight {
     vec3 position;
     float radius;
     vec3 color;
-    float padding_1;
+    float intensity;
+};
+
+struct AdvancedCameraData {
+    vec3 position; 
+    vec3 forward;
+    vec3 up; 
+    vec3 right;
+    float half_fov; 
+    vec2 window_size; 
+    float tile_size;
 };

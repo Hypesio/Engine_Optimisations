@@ -47,6 +47,7 @@ enum class BufferUsage {
     Index,
     Uniform,
     Storage,
+    Atomic_counter
 };
 
 enum class AccessType {

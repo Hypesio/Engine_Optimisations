@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include <glm/vec4.hpp>
 
 namespace OM3D {
 
@@ -39,6 +40,18 @@ static GLuint create_texture_handle() {
     return handle;
 }
 
+static GLuint create_texture_buffer_handle() {
+    GLuint handle = 0;
+    glCreateTextures(GL_TEXTURE_BUFFER, 1, &handle);
+    return handle;
+}
+
+static GLuint create_buffer_handle() {
+    GLuint handle = 0;
+    glCreateBuffers(1, &handle);
+    return handle;
+}
+
 Texture::Texture(const TextureData& data) :
     _handle(create_texture_handle()),
     _size(data.size),
@@ -59,9 +72,35 @@ Texture::Texture(const glm::uvec2 &size, ImageFormat format) :
     glTextureStorage2D(_handle.get(), 1, gl_format.internal_format, _size.x, _size.y);
 }
 
+Texture::Texture(const glm::uvec2 &size, ImageFormat format, int value) :
+    _handle(create_texture_handle()),
+    _size(size),
+    _format(format) {
+    
+    const ImageFormatGL gl_format = image_format_to_gl(_format);
+    glTextureStorage2D(_handle.get(), 1, gl_format.internal_format, _size.x, _size.y);
+    std::vector<int> data(size.x * size.y, value);
+    glTextureSubImage2D(_handle.get(), 0, 0, 0, _size.x, _size.y, gl_format.format, gl_format.component_type, data.data());
+}
+
+Texture::Texture(const size_t buffer_size, ImageFormat format) :
+    _handle(create_texture_buffer_handle()),
+    _buffer_size(buffer_size),
+    _buffer_handle(create_buffer_handle()),
+    _format(format) {
+
+    std::vector<glm::vec4> data(_buffer_size, glm::vec4(0.0, 0.0, 0.0, 0.0));
+    glNamedBufferStorage(_buffer_handle.get(), _buffer_size * sizeof(glm::vec4), data.data(), GL_DYNAMIC_STORAGE_BIT);
+    const ImageFormatGL gl_format = image_format_to_gl(_format);
+    glTextureBuffer(_handle.get(), gl_format.internal_format, _buffer_handle.get());
+}
+
 Texture::~Texture() {
     if(auto handle = _handle.get()) {
         glDeleteTextures(1, &handle);
+    }
+    if(auto handle = _buffer_handle.get()) {
+        glDeleteBuffers(1, &handle);
     }
 }
 
@@ -73,8 +112,21 @@ void Texture::bind_as_image(u32 index, AccessType access) {
     glBindImageTexture(index, _handle.get(), 0, false, 0, access_type_to_gl(access), image_format_to_gl(_format).internal_format);
 }
 
+void Texture::bind_as_buffer(u32 index) const {
+    //glBindTexture(GL_TEXTURE_BUFFER, _handle.get());
+    glBindImageTexture(index, _handle.get(), 0, GL_FALSE, 0, GL_READ_WRITE, image_format_to_gl(_format).internal_format);
+}
+
 const glm::uvec2& Texture::size() const {
     return _size;
+}
+
+const int Texture::buffer_size() const {
+    return _buffer_size;
+}
+
+const GLHandle& Texture::handle() const{
+    return _handle;
 }
 
 // Return number of mip levels needed

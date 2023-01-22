@@ -24,6 +24,11 @@ class PointLight : NonCopyable {
             _radius = radius;
         }
 
+        void set_intensity(float intensity) 
+        {
+            _intensity = intensity;
+        }
+
 
         const glm::vec3& position() const {
             return _position;
@@ -37,10 +42,15 @@ class PointLight : NonCopyable {
             return _radius;
         }
 
+        float intensity() const {
+            return _intensity;
+        }
+
     private:
         glm::vec3 _position = {};
         glm::vec3 _color = glm::vec3(1.0f);
         float _radius = 10.0f;
+        float _intensity = 1.0f;
 };
 
 }

@@ -12,6 +12,8 @@ ImageFormatGL image_format_to_gl(ImageFormat format) {
         case ImageFormat::RGB8_sRGB:        return ImageFormatGL{ GL_RGB, GL_SRGB8, GL_UNSIGNED_BYTE };
         case ImageFormat::RGBA16_FLOAT:     return ImageFormatGL{ GL_RGBA, GL_RGBA16F, GL_FLOAT };
         case ImageFormat::Depth32_FLOAT:    return ImageFormatGL{ GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT32F, GL_FLOAT };
+        case ImageFormat::R32_UINT:         return ImageFormatGL{ GL_RED_INTEGER, GL_R32UI, GL_UNSIGNED_INT };
+        case ImageFormat::RGBA_32UI:        return ImageFormatGL{ GL_RGBA, GL_RGBA32UI, GL_UNSIGNED_BYTE };
     }
 
     FATAL("Unknown image format");

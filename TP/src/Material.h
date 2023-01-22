@@ -34,6 +34,7 @@ class Material {
 
     public:
         Material();
+        std::shared_ptr<Material> copy_material();
 
         void set_program(std::shared_ptr<Program> prog);
         void set_blend_mode(BlendMode blend);
@@ -41,6 +42,7 @@ class Material {
         void set_depth_test_mode(DepthTestMode depth);
         void set_depth_mask(GLboolean mask);
         void set_texture(u32 slot, std::shared_ptr<Texture> tex);
+        bool is_transparent();
 
         template<typename... Args>
         void set_uniform(Args&&... args) {
@@ -48,7 +50,7 @@ class Material {
         }
 
 
-        void bind() const;
+        void bind(CullMode force_cullmode = CullMode::None) const;
 
         static std::shared_ptr<Material> empty_material();
         static Material textured_material();
@@ -63,6 +65,7 @@ class Material {
         DepthTestMode _depth_test_mode = DepthTestMode::Standard;
         CullMode _culling_mode = CullMode::Backface; 
         GLboolean _depth_mask = GL_TRUE;
+
 };
 
 }

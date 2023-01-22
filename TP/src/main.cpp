@@ -11,6 +11,7 @@
 #include <Texture.h>
 #include <Framebuffer.h>
 #include <ImGuiRenderer.h>
+#include <shader_structs.h>
 
 #include <imgui/imgui.h>
 
@@ -97,6 +98,7 @@ std::unique_ptr<Scene> create_default_scene() {
         light.set_position(glm::vec3(1.0f, 2.0f, 100.0f));
         light.set_color(glm::vec3(255.0f, 255.0f, 255.0f));
         light.set_radius(100.0f);
+        light.set_intensity(30.0f);
         scene->add_object(std::move(light));
     }
     {
@@ -104,6 +106,7 @@ std::unique_ptr<Scene> create_default_scene() {
         light.set_position(glm::vec3(1.0f, 50.0f, -4.0f));
         light.set_color(glm::vec3(255.0f, 255.0f, 255.0f));
         light.set_radius(100.0f);
+        light.set_intensity(50.0f);
         scene->add_object(std::move(light));
     }
 
@@ -142,9 +145,13 @@ int main(int, char**) {
     std::unique_ptr<Scene> sphere_scene = std::move(sphereSceneResult.value);
     SceneView sphere_scene_view(sphere_scene.get());
 
+
     auto tonemap_program = Program::from_file("tonemap.comp");
     auto deferred_program = Program::from_files("deferred.frag", "screen.vert");
     auto plight_program = Program::from_files("p_light.frag", "volume.vert");
+    auto transparent_program = Program::from_files("transparency.frag", "transparency.vert", std::array<std::string, 2>{"TEXTURED", "NORMAL_MAPPED"});
+    auto oit_compute_program = Program::from_file("transparency.comp");
+    auto tiled_program = Program::from_file("tiled.comp");
 
     auto deferred_mat = Material();
     deferred_mat.set_program(deferred_program);
@@ -161,19 +168,25 @@ int main(int, char**) {
 
     Texture depth(window_size, ImageFormat::Depth32_FLOAT);
     Texture lit(window_size, ImageFormat::RGBA16_FLOAT);
+    Texture transparent(window_size, ImageFormat::RGBA16_FLOAT);
     Texture color(window_size, ImageFormat::RGBA8_UNORM);
     
     Framebuffer tonemap_framebuffer(nullptr, std::array{&color});
 
     Texture g_depth(window_size, ImageFormat::Depth32_FLOAT);
-    Texture albedo(window_size, ImageFormat::RGBA8_sRGB);
+    Texture albedo(window_size, ImageFormat::RGBA8_UNORM);
     Texture normals(window_size, ImageFormat::RGBA8_UNORM);
     Framebuffer g_buffer(&g_depth, std::array{&albedo, &normals});
     Framebuffer main_framebuffer(&g_depth, std::array{&lit});
+
+    Texture ll_buffer(window_size.x * window_size.y * 8, ImageFormat::RGBA_32UI);
     
-    int nb_buffers = 2;
-    Texture *buffers[] = { &albedo, &normals };
+    int nb_buffers = 3;
+    Texture *buffers[] = { &albedo, &normals, &transparent };
     int buffer_index = 0;
+    int force_transparency_group = -1;
+    std::shared_ptr<Material> last_material = nullptr;
+    bool transparency_fb = false;
     for(;;) {
         glfwPollEvents();
         if(glfwWindowShouldClose(window) || glfwGetKey(window, GLFW_KEY_ESCAPE)) {
@@ -192,6 +205,7 @@ int main(int, char**) {
             scene_view.render();
         }
 
+        // Deferred operations
         {
             deferred_mat.bind();
             main_framebuffer.bind();
@@ -203,17 +217,34 @@ int main(int, char**) {
             scene_view.deferred_render();
 
             // Compute deferred contribution of each visible point lights
-            plight_mat.bind();
-            //pl_buffer.bind(false);
+            tiled_program->bind();
+
+            lit.bind_as_image(0, AccessType::ReadWrite);
 
             albedo.bind(0);
             normals.bind(1);
             g_depth.bind(2);
 
-            plight_mat.set_uniform("window_size", window_size);
+            uint tile_size = 10;
+            tiled_program->set_uniform("tile_size", tile_size);
+            tiled_program->set_uniform("window_size", window_size);
+            scene_view.tiled_render(window_size, tile_size);
+        }
+        
+        // Render transparency
+        {
+            // Forward rendering of transparent objects
+            Texture oit_head_list(window_size, ImageFormat::R32_UINT, 0);
+            g_depth.bind(2);
+            scene_view.render_transparent(oit_head_list, ll_buffer, transparency_fb);
 
-            std::shared_ptr<StaticMesh> sphere_mesh = sphere_scene.get()->get_mesh(0);
-            scene_view.point_lights_render(sphere_mesh);
+            // Compute to sort pixels values
+            oit_compute_program->bind(); 
+            lit.bind(0); // Bind actual result 
+            oit_head_list.bind_as_image(0, AccessType::ReadOnly); 
+            transparent.bind_as_image(2, AccessType::WriteOnly); // Will write result on color image
+            ll_buffer.bind_as_buffer(0);
+            glDispatchCompute(align_up_to(window_size.x, 8) / 8, align_up_to(window_size.y, 8) / 8, 1);
         }
 
         // Apply a tonemap in compute shader
@@ -224,10 +255,10 @@ int main(int, char**) {
             if (buffer_index > 0)
                 buffers[buffer_index - 1]->bind(0);
             else 
-                lit.bind(0);
+                transparent.bind(0);
 
             color.bind_as_image(1, AccessType::WriteOnly);
-            glDispatchCompute(align_up_to(window_size.x, 8), align_up_to(window_size.y, 8), 1);
+            glDispatchCompute(align_up_to(window_size.x, 8) / 8, align_up_to(window_size.y, 8) / 8, 1);
         }
         // Blit tonemap result to screen
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -254,6 +285,17 @@ int main(int, char**) {
                 buffer_index = 0;
             if (buffer_index < 0)
                 buffer_index = nb_buffers;
+            
+            int new_group_force_transparency = force_transparency_group;
+            ImGui::InputInt("Force transparency group", &new_group_force_transparency);
+            if (new_group_force_transparency != force_transparency_group)
+            {
+                scene->undo_transparency(last_material);
+                last_material = scene->force_transparency(transparent_program, new_group_force_transparency);
+                force_transparency_group = new_group_force_transparency;
+            }
+
+            ImGui::Checkbox("Transparency front and back", &transparency_fb);
         }
         imgui.finish();
 

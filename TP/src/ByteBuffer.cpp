@@ -4,49 +4,69 @@
 
 #include <iostream>
 
-namespace OM3D {
+namespace OM3D
+{
 
-static GLuint create_buffer_handle() {
-    GLuint handle = 0;
-    glCreateBuffers(1, &handle);
-    return handle;
-}
-
-ByteBuffer::ByteBuffer(const void* data, size_t size) : _handle(create_buffer_handle()), _size(size) {
-    ALWAYS_ASSERT(_size, "Buffer size can not be 0");
-    glNamedBufferData(_handle.get(), size, data, GL_STATIC_DRAW);
-}
-
-ByteBuffer::~ByteBuffer() {
-    if(auto handle = _handle.get()) {
-        glDeleteBuffers(1, &handle);
+    static GLuint create_buffer_handle()
+    {
+        GLuint handle = 0;
+        glCreateBuffers(1, &handle);
+        return handle;
     }
-}
 
-void ByteBuffer::bind(BufferUsage usage) const {
-    glBindBuffer(buffer_usage_to_gl(usage), _handle.get());
-}
+    ByteBuffer::ByteBuffer(const void *data, size_t size) : _handle(create_buffer_handle()), _size(size)
+    {
+        ALWAYS_ASSERT(_size, "Buffer size can not be 0");
+        glNamedBufferData(_handle.get(), size, data, GL_STATIC_DRAW);
+    }
 
-void ByteBuffer::bind(BufferUsage usage, u32 index) const {
-    ALWAYS_ASSERT(usage == BufferUsage::Uniform || usage == BufferUsage::Storage, "Index bind is only available for uniform and storage buffers");
-    glBindBufferBase(buffer_usage_to_gl(usage), index, _handle.get());
-}
+    ByteBuffer::~ByteBuffer()
+    {
+        if (auto handle = _handle.get())
+        {
+            glDeleteBuffers(1, &handle);
+        }
+    }
 
-size_t ByteBuffer::byte_size() const {
-    return _size;
-}
+    void ByteBuffer::bind(BufferUsage usage) const
+    {
+        glBindBuffer(buffer_usage_to_gl(usage), _handle.get());
+    }
 
-BufferMapping<byte> ByteBuffer::map_bytes(AccessType access) {
-    return BufferMapping<byte>(map_internal(access), byte_size(), handle());
-}
+    void ByteBuffer::bind(BufferUsage usage, u32 index) const
+    {
+        ALWAYS_ASSERT(usage == BufferUsage::Uniform || usage == BufferUsage::Storage, "Index bind is only available for uniform and storage buffers");
+        glBindBufferBase(buffer_usage_to_gl(usage), index, _handle.get());
+    }
 
-void* ByteBuffer::map_internal(AccessType access) {
-    DEBUG_ASSERT(_handle.is_valid() && _size);
-    return glMapNamedBuffer(_handle.get(), access_type_to_gl(access));
-}
+    size_t ByteBuffer::byte_size() const
+    {
+        return _size;
+    }
 
-const GLHandle& ByteBuffer::handle() const {
-    return _handle;
-}
+    BufferMapping<byte> ByteBuffer::map_bytes(AccessType access)
+    {
+        return BufferMapping<byte>(map_internal(access), byte_size(), handle());
+    }
+
+    void *ByteBuffer::map_internal(AccessType access)
+    {
+        DEBUG_ASSERT(_handle.is_valid() && _size);
+        return glMapNamedBuffer(_handle.get(), access_type_to_gl(access));
+    }
+
+    const GLHandle &ByteBuffer::handle() const
+    {
+        return _handle;
+    }
+
+    void ByteBuffer::bind_atomic_buffer(uint &atomics_buffer, uint &counter)
+    {
+        glGenBuffers(1, &atomics_buffer);
+        // bind the buffer and define its initial storage capacity
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomics_buffer);
+        glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(uint), &counter, GL_DYNAMIC_DRAW);
+        glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomics_buffer);
+    }
 
 }
