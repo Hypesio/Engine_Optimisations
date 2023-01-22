@@ -30,7 +30,7 @@ class Scene : NonMovable {
         void order_objects_in_lists();
         const std::shared_ptr<StaticMesh> get_mesh(size_t obj_index) const;
 
-        void force_transparency(std::shared_ptr<Program> prog); 
+        void force_transparency(std::shared_ptr<Program> prog, int group_index); 
 
     private:
         std::vector<SceneObject> _objects;

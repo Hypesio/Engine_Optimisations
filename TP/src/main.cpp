@@ -97,7 +97,8 @@ std::unique_ptr<Scene> create_default_scene() {
         PointLight light;
         light.set_position(glm::vec3(1.0f, 2.0f, 100.0f));
         light.set_color(glm::vec3(255.0f, 255.0f, 255.0f));
-        light.set_radius(300.0f);
+        light.set_radius(100.0f);
+        light.set_intensity(30.0f);
         scene->add_object(std::move(light));
     }
     {
@@ -105,6 +106,7 @@ std::unique_ptr<Scene> create_default_scene() {
         light.set_position(glm::vec3(1.0f, 50.0f, -4.0f));
         light.set_color(glm::vec3(255.0f, 255.0f, 255.0f));
         light.set_radius(100.0f);
+        light.set_intensity(50.0f);
         scene->add_object(std::move(light));
     }
 
@@ -152,8 +154,8 @@ int main(int, char**) {
     auto transparent_program = Program::from_files("transparency.frag", "transparency.vert", std::array<std::string, 2>{"TEXTURED", "NORMAL_MAPPED"});
     auto oit_compute_program = Program::from_file("transparency.comp");
     auto tiled_program = Program::from_file("tiled.comp");
-    // For arbitrary transparency of some objects for testing purpose
-    scene->force_transparency(transparent_program);
+    // Add arbitrary transparency of some objects for testing purpose
+    scene->force_transparency(transparent_program, 1);
 
     auto deferred_mat = Material();
     deferred_mat.set_program(deferred_program);

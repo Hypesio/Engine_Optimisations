@@ -49,7 +49,7 @@ class Material {
         }
 
 
-        void bind() const;
+        void bind(CullMode force_cullmode = CullMode::None) const;
 
         static std::shared_ptr<Material> empty_material();
         static Material textured_material();
@@ -64,6 +64,7 @@ class Material {
         DepthTestMode _depth_test_mode = DepthTestMode::Standard;
         CullMode _culling_mode = CullMode::Backface; 
         GLboolean _depth_mask = GL_TRUE;
+
 };
 
 }

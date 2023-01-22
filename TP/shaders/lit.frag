@@ -47,7 +47,7 @@ void main() {
         const vec3 light_vec = to_light / dist;
 
         const float NoL = dot(light_vec, normal);
-        const float att = attenuation(dist, light.radius);
+        const float att = attenuation(dist, light.radius) * light.intensity;
         if(NoL <= 0.0 || att <= 0.0f) {
             continue;
         }

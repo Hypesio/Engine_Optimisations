@@ -17,7 +17,7 @@ struct PointLight {
     vec3 position;
     float radius;
     vec3 color;
-    float padding_1;
+    float intensity;
 };
 
 struct AdvancedCameraData {
