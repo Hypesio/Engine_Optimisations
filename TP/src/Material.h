@@ -34,6 +34,7 @@ class Material {
 
     public:
         Material();
+        std::shared_ptr<Material> copy_material();
 
         void set_program(std::shared_ptr<Program> prog);
         void set_blend_mode(BlendMode blend);

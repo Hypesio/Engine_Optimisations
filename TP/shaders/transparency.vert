@@ -20,7 +20,9 @@ layout(binding = 0) uniform Data {
     FrameData frame;
 };
 
-uniform vec3 camera_pos; 
+layout(binding = 1) uniform CameraPosition {
+    vec3 camera_pos; 
+};
 
 layout(binding = 2) buffer Models {
     mat4 models[];

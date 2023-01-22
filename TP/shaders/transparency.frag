@@ -77,7 +77,7 @@ void main() {
     out_color = vec4(normal * 0.5 + 0.5, 1.0);
 #endif
 
-    // TODO Remove - Force transparency of object
+    // Here for test - Force transparency of object
     out_color[3] = 0.8f;
 
     int idx = int(atomicCounterIncrement(counter) + 1u);
@@ -86,7 +86,7 @@ void main() {
         uint prev = imageAtomicExchange(head_texture, ivec2(gl_FragCoord.xy), idx);
         uint color_rg = packHalf2x16(out_color.rg);
         uint color_ba = packHalf2x16(out_color.ba);
-        imageStore(data_list, idx, uvec4(color_rg, color_ba, float_to_uint(depth), prev));
+        imageStore(data_list, idx, uvec4(color_rg, color_ba, uint(depth), prev));
     }
 
     out_color = vec4(0.0);

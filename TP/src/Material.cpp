@@ -154,4 +154,18 @@ namespace OM3D
         return material;
     }
 
+    std::shared_ptr<Material> Material::copy_material()
+    {
+        std::shared_ptr<Material> copy = std::make_shared<Material>(Material::textured_normal_mapped_material());
+        copy->set_blend_mode(_blend_mode); 
+        copy->set_cull_mode(_culling_mode);
+        copy->set_depth_mask(_depth_mask);
+        copy->set_depth_test_mode(_depth_test_mode);
+        copy->set_program(_program);
+        for (auto tex : _textures)
+            copy->set_texture(tex.first, tex.second);
+
+        return copy;
+    }
+
 }

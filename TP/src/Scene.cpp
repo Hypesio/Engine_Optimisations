@@ -102,7 +102,7 @@ namespace OM3D
         }
     }
 
-    void Scene::render_transparent(const Camera &camera, Texture &head_list, Texture &ll_buffer) const
+    void Scene::render_transparent(const Camera &camera, Texture &head_list, Texture &ll_buffer, bool transparency_fb) const
     {
         Frustum frustum = camera.build_frustum();
 
@@ -152,7 +152,7 @@ namespace OM3D
         {
             for (const size_t &obj_index : instanceList)
             {
-                _objects[obj_index].render(camera, frustum, false);
+                _objects[obj_index].render(camera, frustum, transparency_fb);
             }
         }
     }
@@ -362,14 +362,31 @@ namespace OM3D
         return _objects[obj_index].get_mesh();
     }
 
-    void Scene::force_transparency(std::shared_ptr<Program> prog, int group_index)
+    std::shared_ptr<Material> Scene::force_transparency(std::shared_ptr<Program> prog, int group_index)
     {
+        if (group_index < 0 || group_index >= _instanceGroups.size())
+            return nullptr;
+
+        std::shared_ptr<Material> mat_copy = _objects[_instanceGroups[group_index][0]].get_material()->copy_material();
         for (size_t i = 0; i < _instanceGroups[group_index].size(); i++)
         {
             _objects[_instanceGroups[group_index][i]].get_material()->set_blend_mode(BlendMode::Alpha);
             _objects[_instanceGroups[group_index][i]].get_material()->set_depth_mask(GL_FALSE);
             _objects[_instanceGroups[group_index][i]].get_material()->set_depth_test_mode(DepthTestMode::Reversed);
             _objects[_instanceGroups[group_index][i]].get_material()->set_program(prog);
+        }
+
+        this->order_objects_in_lists();
+        return mat_copy;
+    }
+
+    void Scene::undo_transparency(std::shared_ptr<Material> mat)
+    {
+        if (_transparentInstanceGroups.size() == 0)
+            return;
+        for (size_t i = 0; i < _transparentInstanceGroups[0].size(); i++)
+        {
+            _objects[_transparentInstanceGroups[0][i]].set_material(mat);
         }
         this->order_objects_in_lists();
     }

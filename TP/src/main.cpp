@@ -97,7 +97,7 @@ std::unique_ptr<Scene> create_default_scene() {
         PointLight light;
         light.set_position(glm::vec3(1.0f, 2.0f, 100.0f));
         light.set_color(glm::vec3(255.0f, 255.0f, 255.0f));
-        light.set_radius(100.0f);
+        light.set_radius(50.0f);
         light.set_intensity(30.0f);
         scene->add_object(std::move(light));
     }
@@ -105,7 +105,7 @@ std::unique_ptr<Scene> create_default_scene() {
         PointLight light;
         light.set_position(glm::vec3(1.0f, 50.0f, -4.0f));
         light.set_color(glm::vec3(255.0f, 255.0f, 255.0f));
-        light.set_radius(100.0f);
+        light.set_radius(10.0f);
         light.set_intensity(50.0f);
         scene->add_object(std::move(light));
     }
@@ -139,8 +139,6 @@ int main(int, char**) {
 
     std::unique_ptr<Scene> scene = create_default_scene();
     SceneView scene_view(scene.get());
-    // TODO - remove - find better examples of transparency
-    
 
     auto sphereSceneResult = Scene::from_gltf(std::string(data_path) + "sphere.glb");
     ALWAYS_ASSERT(sphereSceneResult.is_ok, "Unable to load default scene");
@@ -155,7 +153,7 @@ int main(int, char**) {
     auto oit_compute_program = Program::from_file("transparency.comp");
     auto tiled_program = Program::from_file("tiled.comp");
     // Add arbitrary transparency of some objects for testing purpose
-    scene->force_transparency(transparent_program, 1);
+    
 
     auto deferred_mat = Material();
     deferred_mat.set_program(deferred_program);
@@ -185,9 +183,12 @@ int main(int, char**) {
 
     Texture ll_buffer(window_size.x * window_size.y * 5, ImageFormat::RGBA_32UI);
     
-    int nb_buffers = 2;
+    int nb_buffers = 3;
     Texture *buffers[] = { &albedo, &normals, &transparent };
     int buffer_index = 0;
+    int force_transparency_group = -1;
+    std::shared_ptr<Material> last_material = nullptr;
+    bool transparency_fb = false;
     for(;;) {
         glfwPollEvents();
         if(glfwWindowShouldClose(window) || glfwGetKey(window, GLFW_KEY_ESCAPE)) {
@@ -229,7 +230,7 @@ int main(int, char**) {
             uint tile_size = 10;
             tiled_program->set_uniform("tile_size", tile_size);
             tiled_program->set_uniform("window_size", window_size);
-            scene_view.tiled_render(window_size, tile_size);
+            //scene_view.tiled_render(window_size, tile_size);
         }
         
         // Render transparency
@@ -237,7 +238,7 @@ int main(int, char**) {
             // Forward rendering of transparent objects
             Texture oit_head_list(window_size, ImageFormat::R32_UINT, 0);
             g_depth.bind(2);
-            scene_view.render_transparent(oit_head_list, ll_buffer);
+            scene_view.render_transparent(oit_head_list, ll_buffer, transparency_fb);
 
             // Compute to sort pixels values
             oit_compute_program->bind(); 
@@ -286,6 +287,17 @@ int main(int, char**) {
                 buffer_index = 0;
             if (buffer_index < 0)
                 buffer_index = nb_buffers;
+            
+            int new_group_force_transparency = force_transparency_group;
+            ImGui::InputInt("Force transparency group", &new_group_force_transparency);
+            if (new_group_force_transparency != force_transparency_group)
+            {
+                scene->undo_transparency(last_material);
+                last_material = scene->force_transparency(transparent_program, new_group_force_transparency);
+                force_transparency_group = new_group_force_transparency;
+            }
+
+            ImGui::Checkbox("Transparency front and back", &transparency_fb);
         }
         imgui.finish();
 

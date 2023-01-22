@@ -83,6 +83,8 @@ void main()
             color = blend(node_color, color);
         }
 
+        //color = vec4(mix(vec3(0.0, 1.0, 0.0), vec3(1.0, 0.0, 0.0), float(full_list[0].z)) / 1000.0, 1.0);
+        //color = vec4(full_list[0].z, full_list[0].z, full_list[0].z, 1.0);
         imageStore(out_image, coord, color);
     }
     else 

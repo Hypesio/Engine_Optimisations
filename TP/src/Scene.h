@@ -20,7 +20,7 @@ class Scene : NonMovable {
         static Result<std::unique_ptr<Scene>> from_gltf(const std::string& file_name);
 
         void render(const Camera& camera) const;
-        void render_transparent(const Camera& camera, Texture &head_list, Texture &ll_buffer) const;
+        void render_transparent(const Camera& camera, Texture &head_list, Texture &ll_buffer, bool transparency_fb) const;
         void deferred_render(const Camera &camera) const;
         void point_lights_render(const Camera &camera, std::shared_ptr<StaticMesh> sphere_mesh) const;
         void tiled_render(const Camera &camera, glm::uvec2 window_size, size_t tile_size) const;
@@ -30,7 +30,8 @@ class Scene : NonMovable {
         void order_objects_in_lists();
         const std::shared_ptr<StaticMesh> get_mesh(size_t obj_index) const;
 
-        void force_transparency(std::shared_ptr<Program> prog, int group_index); 
+        std::shared_ptr<Material> force_transparency(std::shared_ptr<Program> prog, int group_index); 
+        void undo_transparency(std::shared_ptr<Material> mat);
 
     private:
         std::vector<SceneObject> _objects;

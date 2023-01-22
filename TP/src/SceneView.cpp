@@ -19,9 +19,9 @@ void SceneView::render() const {
     }
 }
 
-void SceneView::render_transparent(Texture &head_list, Texture &ll_buffer) const {
+void SceneView::render_transparent(Texture &head_list, Texture &ll_buffer, bool transparency_fb) const {
     if(_scene) {
-        _scene->render_transparent(_camera, head_list, ll_buffer);
+        _scene->render_transparent(_camera, head_list, ll_buffer, transparency_fb);
     }
 }
 
