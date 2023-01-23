@@ -298,7 +298,7 @@ namespace OM3D
                     light.position(),
                     light.radius(),
                     light.color(),
-                    0.0f};
+                    light.intensity()};
             }
         }
         light_buffer.bind(BufferUsage::Storage, 1);

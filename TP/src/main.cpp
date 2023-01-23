@@ -83,21 +83,14 @@ void process_inputs(GLFWwindow* window, Camera& camera) {
     mouse_pos = new_mouse_pos;
 }
 
-
-std::unique_ptr<Scene> create_default_scene() {
-    auto scene = std::make_unique<Scene>();
-
-    // Load default cube model
-    auto result = Scene::from_gltf(std::string(data_path) + "forest.glb");
-    ALWAYS_ASSERT(result.is_ok, "Unable to load default scene");
-    scene = std::move(result.value);
-
-    // Add lights
+void add_lights(std::unique_ptr<Scene>& scene)
+{
+        // Add lights
     {
         PointLight light;
-        light.set_position(glm::vec3(1.0f, 2.0f, 100.0f));
+        light.set_position(glm::vec3(0.0f, 50.0f, 0.0f));
         light.set_color(glm::vec3(255.0f, 255.0f, 255.0f));
-        light.set_radius(100.0f);
+        light.set_radius(40.0f);
         light.set_intensity(30.0f);
         scene->add_object(std::move(light));
     }
@@ -109,6 +102,53 @@ std::unique_ptr<Scene> create_default_scene() {
         light.set_intensity(50.0f);
         scene->add_object(std::move(light));
     }
+
+    {
+        PointLight light;
+        light.set_position(glm::vec3(201.0f, 70.0f, 40.0f));
+        light.set_color(glm::vec3(255.0f, 125.0f, 125.0f));
+        light.set_radius(100.0f);
+        light.set_intensity(50.0f);
+        scene->add_object(std::move(light));
+    }
+
+    {
+        PointLight light;
+        light.set_position(glm::vec3(-201.0f, 70.0f, -340.0f));
+        light.set_color(glm::vec3(255.0f, 125.0f, 125.0f));
+        light.set_radius(250.0f);
+        light.set_intensity(30.0f);
+        scene->add_object(std::move(light));
+    }
+
+    {
+        PointLight light;
+        light.set_position(glm::vec3(201.0f, 70.0f, 240.0f));
+        light.set_color(glm::vec3(255.0f, 125.0f, 125.0f));
+        light.set_radius(50.0f);
+        light.set_intensity(30.0f);
+        scene->add_object(std::move(light));
+    }
+
+    {
+        PointLight light;
+        light.set_position(glm::vec3(-151.0f, 120.0f, -100.0f));
+        light.set_color(glm::vec3(255.0f, 125.0f, 125.0f));
+        light.set_radius(80.0f);
+        light.set_intensity(30.0f);
+        scene->add_object(std::move(light));
+    }
+}
+
+std::unique_ptr<Scene> create_default_scene() {
+    auto scene = std::make_unique<Scene>();
+
+    // Load default cube model
+    auto result = Scene::from_gltf(std::string(data_path) + "forest.glb");
+    ALWAYS_ASSERT(result.is_ok, "Unable to load default scene");
+    scene = std::move(result.value);
+    
+    add_lights(scene);
 
     // Order objects for instancing
     scene->order_objects_in_lists();
@@ -274,6 +314,7 @@ int main(int, char**) {
                     std::cerr << "Unable to load scene (" << buffer << ")" << std::endl;
                 } else {
                     scene = std::move(result.value);
+                    add_lights(scene);
                     scene->order_objects_in_lists();
                     scene_view = SceneView(scene.get());
                 }
