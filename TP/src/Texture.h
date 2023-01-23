@@ -39,6 +39,7 @@ class Texture {
         void bind_as_buffer(u32 index) const;
 
         const glm::uvec2& size() const;
+        const int buffer_size() const;
 
         const GLHandle &handle() const;
 

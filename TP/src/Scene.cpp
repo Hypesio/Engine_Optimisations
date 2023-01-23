@@ -138,6 +138,10 @@ namespace OM3D
         TypedBuffer<glm::vec3> camera_pos(&const_cam_pos, 1);
         camera_pos.bind(BufferUsage::Uniform, 1);
 
+        const int max_size = ll_buffer.buffer_size();
+        TypedBuffer<int> max_storage_size(&max_size, 1);
+        max_storage_size.bind(BufferUsage::Uniform, 2);
+
         // Bind image2D HeadTexture;
         head_list.bind_as_image(1, AccessType::ReadWrite);
 

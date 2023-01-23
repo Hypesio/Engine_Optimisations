@@ -22,6 +22,10 @@ layout(binding = 0) uniform sampler2D in_texture;
 layout(binding = 1) uniform sampler2D in_normal_texture;
 layout(binding = 2) uniform sampler2D in_depth;
 
+layout(binding = 2) uniform StorageSize {
+    int maxSize; 
+};
+
 layout(r32ui, binding = 1) uniform uimage2D head_texture;
 layout(rgba32ui, binding = 0) uniform uimageBuffer data_list;
 
@@ -78,10 +82,11 @@ void main() {
 #endif
 
     // Here for test - Force transparency of object
-    out_color[3] = 0.8f;
+    out_color[3] = 0.4f;
 
     int idx = int(atomicCounterIncrement(counter) + 1u);
 
+    if (idx < maxSize)
     {
         uint prev = imageAtomicExchange(head_texture, ivec2(gl_FragCoord.xy), idx);
         uint color_rg = packHalf2x16(out_color.rg);

@@ -121,6 +121,10 @@ const glm::uvec2& Texture::size() const {
     return _size;
 }
 
+const int Texture::buffer_size() const {
+    return _buffer_size;
+}
+
 const GLHandle& Texture::handle() const{
     return _handle;
 }

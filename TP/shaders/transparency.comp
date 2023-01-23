@@ -55,20 +55,12 @@ void main()
         while(idx > 0)
         {
             uvec4 to_add = imageLoad(data_list, int(idx));
+            int j = int(size) - 2;
 
-            for (uint i = 0; i < size; i++)
+            while (j >= 0 && full_list[j].z > to_add.z)
             {
-                if (full_list[i].z < to_add.z)
-                {
-                    uvec4 prev = full_list[i];
-                    full_list[i] = to_add;
-                    for (uint j = i + 1; j < size; j++)
-                    {
-                        uvec4 tmp = full_list[j];
-                        full_list[j] = prev; 
-                        prev = tmp;
-                    }
-                }
+                full_list[j + 1] = full_list[j];
+                j --;
             }
             idx = int(to_add.w);
         }

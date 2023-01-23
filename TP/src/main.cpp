@@ -97,7 +97,7 @@ std::unique_ptr<Scene> create_default_scene() {
         PointLight light;
         light.set_position(glm::vec3(1.0f, 2.0f, 100.0f));
         light.set_color(glm::vec3(255.0f, 255.0f, 255.0f));
-        light.set_radius(50.0f);
+        light.set_radius(100.0f);
         light.set_intensity(30.0f);
         scene->add_object(std::move(light));
     }
@@ -105,7 +105,7 @@ std::unique_ptr<Scene> create_default_scene() {
         PointLight light;
         light.set_position(glm::vec3(1.0f, 50.0f, -4.0f));
         light.set_color(glm::vec3(255.0f, 255.0f, 255.0f));
-        light.set_radius(10.0f);
+        light.set_radius(100.0f);
         light.set_intensity(50.0f);
         scene->add_object(std::move(light));
     }
@@ -152,8 +152,6 @@ int main(int, char**) {
     auto transparent_program = Program::from_files("transparency.frag", "transparency.vert", std::array<std::string, 2>{"TEXTURED", "NORMAL_MAPPED"});
     auto oit_compute_program = Program::from_file("transparency.comp");
     auto tiled_program = Program::from_file("tiled.comp");
-    // Add arbitrary transparency of some objects for testing purpose
-    
 
     auto deferred_mat = Material();
     deferred_mat.set_program(deferred_program);
@@ -181,7 +179,7 @@ int main(int, char**) {
     Framebuffer g_buffer(&g_depth, std::array{&albedo, &normals});
     Framebuffer main_framebuffer(&g_depth, std::array{&lit});
 
-    Texture ll_buffer(window_size.x * window_size.y * 5, ImageFormat::RGBA_32UI);
+    Texture ll_buffer(window_size.x * window_size.y * 8, ImageFormat::RGBA_32UI);
     
     int nb_buffers = 3;
     Texture *buffers[] = { &albedo, &normals, &transparent };
@@ -230,7 +228,7 @@ int main(int, char**) {
             uint tile_size = 10;
             tiled_program->set_uniform("tile_size", tile_size);
             tiled_program->set_uniform("window_size", window_size);
-            //scene_view.tiled_render(window_size, tile_size);
+            scene_view.tiled_render(window_size, tile_size);
         }
         
         // Render transparency

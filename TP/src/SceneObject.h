@@ -27,7 +27,7 @@ class SceneObject : NonCopyable {
             return _material;
         } 
 
-        const void set_material(const std::shared_ptr<Material> new_mat) {
+        void set_material(const std::shared_ptr<Material> new_mat) {
             _material = new_mat;
         } 
 
